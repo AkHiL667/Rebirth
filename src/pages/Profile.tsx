@@ -1,12 +1,17 @@
 import { useState } from 'react';
 import { useStreakTimer } from '@/hooks/useStreakTimer';
-import { User, RotateCcw, AlertTriangle } from 'lucide-react';
+import { useUserName } from '@/hooks/useUserName';
+import { User, RotateCcw, AlertTriangle, Edit2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 const Profile = () => {
   const { streakData, resetStreak } = useStreakTimer();
+  const { userName, updateUserName } = useUserName();
   const [isResetting, setIsResetting] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [tempName, setTempName] = useState('');
 
   const handleReset = () => {
     setIsResetting(true);
@@ -16,6 +21,21 @@ const Profile = () => {
     }, 500);
   };
 
+  const handleNameEdit = () => {
+    setTempName(userName);
+    setIsEditingName(true);
+  };
+
+  const handleNameSave = () => {
+    updateUserName(tempName);
+    setIsEditingName(false);
+  };
+
+  const handleNameCancel = () => {
+    setTempName('');
+    setIsEditingName(false);
+  };
+
   return (
     <div className="pt-20 pb-20 min-h-screen">
       <div className="max-w-md mx-auto px-4">
@@ -23,8 +43,45 @@ const Profile = () => {
           <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <User className="w-10 h-10 text-primary" />
           </div>
-          <h2 className="text-2xl font-bold text-foreground mb-2">Your Profile</h2>
-          <p className="text-muted-foreground">Smoke-free warrior</p>
+          
+          {isEditingName ? (
+            <div className="space-y-3">
+              <Input
+                value={tempName}
+                onChange={(e) => setTempName(e.target.value)}
+                placeholder="Enter your name"
+                className="text-center max-w-xs mx-auto"
+                autoFocus
+              />
+              <div className="flex justify-center space-x-2">
+                <Button onClick={handleNameSave} size="sm" className="bg-primary hover:bg-primary-light text-primary-foreground">
+                  Save
+                </Button>
+                <Button onClick={handleNameCancel} variant="outline" size="sm">
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="flex items-center justify-center space-x-2">
+                <h2 className="text-2xl font-bold text-foreground">
+                  {userName || 'Welcome!'}
+                </h2>
+                <Button 
+                  onClick={handleNameEdit} 
+                  variant="ghost" 
+                  size="sm"
+                  className="p-1 h-auto"
+                >
+                  <Edit2 className="w-4 h-4 text-muted-foreground" />
+                </Button>
+              </div>
+              <p className="text-muted-foreground">
+                {userName ? 'Smoke-free warrior' : 'Click to add your name'}
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="space-y-6">
