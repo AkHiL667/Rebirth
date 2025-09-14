@@ -2,41 +2,61 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Rebirth Design System - Clean, motivational health app aesthetic */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Base colors - Clean white background with soft grays */
+    --background: 0 0% 98%;
+    --foreground: 215 25% 15%;
 
+    /* Card system - Clean white cards with subtle shadows */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 215 25% 15%;
 
+    /* Popover colors */
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 215 25% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary - Deep forest green for health and growth */
+    --primary: 142 76% 36%;
+    --primary-foreground: 0 0% 98%;
+    --primary-light: 142 76% 45%;
+    --primary-glow: 142 76% 55%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Secondary - Sky blue for clean air and breath */
+    --secondary: 200 100% 60%;
+    --secondary-foreground: 0 0% 98%;
+    --secondary-light: 200 100% 70%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Achievement gold - Warm celebration color */
+    --achievement: 45 100% 60%;
+    --achievement-foreground: 215 25% 15%;
+    --achievement-glow: 45 100% 70%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Success green - For completed items */
+    --success: 120 60% 50%;
+    --success-foreground: 0 0% 98%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Muted colors for subtle elements */
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* Accent colors */
+    --accent: 200 100% 95%;
+    --accent-foreground: 200 100% 20%;
 
-    --radius: 0.5rem;
+    /* Destructive for reset/warning actions */
+    --destructive: 0 75% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    /* Border and input styling */
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 142 76% 36%;
+
+    /* Design system variables */
+    --radius: 1rem;
 
     --sidebar-background: 0 0% 98%;
 
@@ -91,6 +111,19 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Gradients for beautiful backgrounds */
+    --gradient-fresh: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%);
+    --gradient-achievement: linear-gradient(135deg, hsl(var(--achievement)) 0%, hsl(var(--achievement-glow)) 100%);
+    --gradient-subtle: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--accent)) 100%);
+    
+    /* Shadows for depth */
+    --shadow-soft: 0 2px 10px hsl(var(--primary) / 0.1);
+    --shadow-achievement: 0 4px 20px hsl(var(--achievement) / 0.2);
+    --shadow-card: 0 1px 3px hsl(var(--foreground) / 0.1);
+    
+    /* Animation durations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
 
@@ -101,5 +134,35 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    background: var(--gradient-subtle);
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  /* Hero number highlighting */
+  .streak-highlight {
+    @apply text-primary font-bold text-2xl;
+  }
+  
+  /* Achievement card styles */
+  .achievement-unlocked {
+    @apply bg-white border-2 border-achievement shadow-achievement;
+    background: var(--gradient-achievement);
+    color: hsl(var(--achievement-foreground));
+  }
+  
+  .achievement-locked {
+    @apply bg-muted border-border opacity-60;
+  }
+  
+  /* Smooth hover animations */
+  .hover-lift {
+    @apply transition-all duration-300 hover:shadow-soft hover:-translate-y-1;
+  }
+  
+  /* Navigation active state */
+  .nav-active {
+    @apply text-primary;
   }
 }
