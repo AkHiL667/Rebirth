@@ -38,6 +38,7 @@ export default {
           DEFAULT: "hsl(var(--achievement))",
           foreground: "hsl(var(--achievement-foreground))",
           glow: "hsl(var(--achievement-glow))",
+          dark: "hsl(var(--achievement-dark))",
         },
         success: {
           DEFAULT: "hsl(var(--success))",

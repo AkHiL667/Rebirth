@@ -73,5 +73,39 @@ export const useStreakTimer = () => {
     });
   };
 
-  return { streakData, resetStreak };
+  const setCustomQuitDate = (customQuitDate: Date) => {
+    // Validate that the quit date is not in the future
+    const now = new Date();
+    if (customQuitDate > now) {
+      throw new Error('Quit date cannot be in the future');
+    }
+
+    // Validate that the quit date is not too far in the past (more than 10 years)
+    const tenYearsAgo = new Date();
+    tenYearsAgo.setFullYear(tenYearsAgo.getFullYear() - 10);
+    if (customQuitDate < tenYearsAgo) {
+      throw new Error('Quit date cannot be more than 10 years ago');
+    }
+
+    // Save the new quit date
+    localStorage.setItem(STORAGE_KEY, customQuitDate.toISOString());
+    
+    // Update the streak data immediately
+    const timeDiff = now.getTime() - customQuitDate.getTime();
+    const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+
+    setStreakData({
+      days,
+      hours,
+      minutes,
+      seconds,
+      totalDays: days,
+      quitDate: customQuitDate
+    });
+  };
+
+  return { streakData, resetStreak, setCustomQuitDate };
 };

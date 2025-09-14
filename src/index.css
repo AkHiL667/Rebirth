@@ -197,12 +197,26 @@
   
   /* Achievement card styles */
   .achievement-unlocked {
-    background: var(--gradient-achievement);
+    background: linear-gradient(135deg, hsl(var(--achievement-dark)) 0%, hsl(var(--achievement)) 50%, hsl(var(--achievement-glow)) 100%);
     color: hsl(var(--achievement-foreground));
-    border: 2px solid hsl(var(--achievement-glow));
     box-shadow: var(--shadow-achievement);
     transform: scale(1);
     transition: var(--transition-spring);
+    position: relative;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  
+  .achievement-unlocked::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(135deg, hsl(var(--achievement-glow)), hsl(var(--achievement)), hsl(var(--achievement-glow)));
+    border-radius: inherit;
+    z-index: -1;
   }
   
   .achievement-unlocked:hover {
@@ -288,11 +302,12 @@
     content: '';
     position: absolute;
     top: 0;
-    left: -100%;
+    left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, hsl(var(--primary-glow) / 0.4), transparent);
-    animation: shimmer 2s infinite;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    animation: shimmer 3s ease-in-out infinite;
+    will-change: transform;
   }
 }
 
@@ -302,7 +317,27 @@
   }
   
   .animate-celebration {
-    animation: celebration 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    animation: celebration 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  
+  .animate-achievement-glow {
+    animation: achievement-glow 2s ease-in-out infinite;
+  }
+  
+  .animate-achievement-bounce {
+    animation: achievement-bounce 1.2s ease-in-out;
+  }
+  
+  .animate-checkin-success {
+    animation: checkin-success 0.6s ease-in-out;
+  }
+  
+  .animate-confetti {
+    animation: confetti 1s ease-out forwards;
+  }
+  
+  .animate-bounce-in {
+    animation: bounce-in 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   }
 }
 
@@ -318,8 +353,8 @@
 }
 
 @keyframes shimmer {
-  0% { left: -100%; }
-  100% { left: 100%; }
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
 @keyframes count-up {
@@ -328,7 +363,233 @@
 }
 
 @keyframes celebration {
-  0% { transform: scale(0.3) rotate(-180deg); opacity: 0; }
-  50% { transform: scale(1.1) rotate(-90deg); opacity: 1; }
-  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  0% { 
+    transform: scale(0.8) translateY(20px); 
+    opacity: 0; 
+  }
+  50% { 
+    transform: scale(1.05) translateY(-5px); 
+    opacity: 1; 
+  }
+  100% { 
+    transform: scale(1) translateY(0); 
+    opacity: 1; 
+  }
+}
+
+@keyframes achievement-glow {
+  0% { 
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+  }
+  50% { 
+    box-shadow: 0 0 30px rgba(16, 185, 129, 0.6), 0 0 40px rgba(16, 185, 129, 0.3);
+  }
+  100% { 
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+  }
+}
+
+@keyframes achievement-bounce {
+  0% { transform: translateY(0); }
+  25% { transform: translateY(-8px); }
+  50% { transform: translateY(0); }
+  75% { transform: translateY(-4px); }
+  100% { transform: translateY(0); }
+}
+
+@keyframes checkin-success {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+@keyframes confetti {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+}
+
+@keyframes bounce-in {
+  0% { transform: scale(0.3); opacity: 0; }
+  50% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* PWA and Mobile Enhancements */
+@supports (display: standalone) {
+  /* PWA-specific styles */
+  body {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Touch-friendly interactions */
+@media (hover: none) and (pointer: coarse) {
+  /* Mobile touch devices */
+  button, [role="button"], .clickable {
+    @apply min-h-[44px] min-w-[44px];
+  }
+  
+  .glass-card {
+    @apply active:scale-[0.98] transition-transform duration-150;
+  }
+  
+  /* Larger touch targets for mobile */
+  .nav-item {
+    @apply py-3 px-4;
+  }
+  
+  /* Better spacing for mobile */
+  .mobile-spacing {
+    @apply space-y-4;
+  }
+  
+  /* Prevent zoom on input focus */
+  input, textarea, select {
+    @apply text-base;
+  }
+}
+
+/* Safe area support for notched devices */
+@supports (padding: max(0px)) {
+  .safe-area-top {
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+  
+  .safe-area-left {
+    padding-left: max(1rem, env(safe-area-inset-left));
+  }
+  
+  .safe-area-right {
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+}
+
+/* PWA Install Banner Animation */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+/* Pull-to-refresh indicator */
+.pull-to-refresh {
+  @apply fixed top-0 left-1/2 transform -translate-x-1/2 -translate-y-full;
+  @apply w-8 h-8 bg-primary rounded-full flex items-center justify-center;
+  @apply transition-transform duration-200;
+}
+
+.pull-to-refresh.visible {
+  @apply translate-y-4;
+}
+
+/* Haptic feedback visual indicators */
+.haptic-light {
+  @apply active:scale-[0.98] transition-transform duration-100;
+}
+
+.haptic-medium {
+  @apply active:scale-[0.96] transition-transform duration-150;
+}
+
+.haptic-heavy {
+  @apply active:scale-[0.94] transition-transform duration-200;
+}
+
+/* Gesture navigation indicators */
+.swipe-indicator {
+  @apply absolute top-1/2 -translate-y-1/2 w-1 h-8 bg-primary/30 rounded-full;
+  @apply opacity-0 transition-opacity duration-200;
+}
+
+.swipe-indicator.left {
+  @apply left-2;
+}
+
+.swipe-indicator.right {
+  @apply right-2;
+}
+
+.swipe-indicator.visible {
+  @apply opacity-100;
+}
+
+/* Offline indicator */
+.offline-indicator {
+  @apply fixed top-4 left-1/2 transform -translate-x-1/2;
+  @apply bg-destructive text-destructive-foreground px-3 py-1 rounded-full text-xs;
+  @apply opacity-0 transition-opacity duration-200;
+}
+
+.offline-indicator.visible {
+  @apply opacity-100;
+}
+
+/* Mobile-specific button styles */
+.mobile-button {
+  @apply min-h-[48px] px-6 text-base font-medium;
+  @apply active:scale-[0.96] transition-transform duration-150;
+  @apply touch-manipulation;
+}
+
+/* Improved mobile scrolling */
+.mobile-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* Mobile navigation improvements */
+.mobile-nav {
+  @apply fixed bottom-0 left-0 right-0;
+  @apply bg-background/95 backdrop-blur-lg border-t border-border;
+  @apply safe-area-bottom;
+}
+
+/* Mobile modal improvements */
+.mobile-modal {
+  @apply fixed inset-0 z-50;
+  @apply bg-background/80 backdrop-blur-sm;
+  @apply flex items-end justify-center;
+  @apply safe-area-bottom;
+}
+
+.mobile-modal-content {
+  @apply w-full max-w-md mx-4 mb-4;
+  @apply bg-background border border-border rounded-t-2xl;
+  @apply max-h-[80vh] overflow-y-auto;
+}
+
+/* Mobile card improvements */
+.mobile-card {
+  @apply rounded-2xl p-4;
+  @apply active:scale-[0.98] transition-transform duration-150;
+  @apply touch-manipulation;
+}
+
+/* Mobile text improvements */
+.mobile-text {
+  @apply text-base leading-relaxed;
+  @apply select-none;
+}
+
+/* Mobile input improvements */
+.mobile-input {
+  @apply text-base py-3 px-4;
+  @apply rounded-xl border border-border;
+  @apply focus:ring-2 focus:ring-primary/20;
+  @apply touch-manipulation;
 }

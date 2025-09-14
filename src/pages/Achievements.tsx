@@ -87,15 +87,15 @@ const Achievements = () => {
                 className={`
                   transition-all duration-500 ease-out
                   ${animateCards ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}
-                  ${isUnlocked ? 'achievement-unlocked animate-celebration' : 'achievement-locked hover-lift'}
+                  ${isUnlocked ? 'animate-achievement-bounce' : 'hover-lift'}
                 `}
                 style={{ transitionDelay: `${index * 100}ms` }}
               >
                 <div className={`
-                  rounded-3xl p-6 border-2 relative overflow-hidden
+                  rounded-3xl p-6 relative overflow-hidden transition-all duration-300
                   ${isUnlocked 
-                    ? 'border-transparent shadow-2xl' 
-                    : 'border-border/30 backdrop-blur-sm'
+                    ? 'achievement-unlocked animate-achievement-glow hover:scale-[1.02]' 
+                    : 'achievement-locked border-2 border-border/30 backdrop-blur-sm hover:scale-[1.01]'
                   }
                 `}>
                   {/* Shimmer effect for unlocked achievements */}
@@ -115,7 +115,7 @@ const Achievements = () => {
                       {isUnlocked ? (
                         <div className="relative">
                           {getAchievementIcon(achievement.type, true)}
-                          <CheckCircle className="absolute -top-2 -right-2 w-4 h-4 text-white bg-success rounded-full" />
+                          <CheckCircle className="absolute -top-2 -right-2 w-4 h-4 text-white bg-success rounded-full animate-pulse" />
                         </div>
                       ) : (
                         <Lock className="w-6 h-6 text-muted-foreground" />
@@ -128,8 +128,8 @@ const Achievements = () => {
                         <span className={`
                           text-xs px-3 py-1 rounded-full font-semibold
                           ${achievement.type === 'healing' 
-                            ? isUnlocked ? 'bg-white/20 text-white' : 'bg-success/10 text-success'
-                            : isUnlocked ? 'bg-white/20 text-white' : 'bg-primary/10 text-primary'
+                            ? isUnlocked ? 'bg-white/95 text-achievement-dark shadow-sm' : 'bg-success/10 text-success'
+                            : isUnlocked ? 'bg-white/95 text-achievement-dark shadow-sm' : 'bg-primary/10 text-primary'
                           }
                         `}>
                           Day {achievement.day}
@@ -142,21 +142,21 @@ const Achievements = () => {
                         `} />
                         
                         {achievement.type === 'healing' && (
-                          <Zap className={`w-4 h-4 ${isUnlocked ? 'text-white' : 'text-success'}`} />
+                          <Zap className={`w-4 h-4 ${isUnlocked ? 'text-white drop-shadow-sm' : 'text-success'}`} />
                         )}
                       </div>
                       
                       {/* Title */}
                       <h3 className={`
                         font-bold mb-2 font-display
-                        ${isUnlocked ? 'text-white text-xl' : 'text-foreground text-lg'}
+                        ${isUnlocked ? 'text-white text-xl drop-shadow-sm' : 'text-foreground text-lg'}
                       `}>
                         {achievement.title}
                       </h3>
                       
                       {/* Description */}
                       {isUnlocked ? (
-                        <p className="text-white/90 text-sm leading-relaxed">
+                        <p className="text-white/95 text-sm leading-relaxed drop-shadow-sm">
                           {achievement.description}
                         </p>
                       ) : (
@@ -168,8 +168,8 @@ const Achievements = () => {
                       {/* Unlock indicator */}
                       {isUnlocked && (
                         <div className="mt-3 flex items-center space-x-2">
-                          <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                          <span className="text-white/80 text-xs font-medium">
+                          <div className="w-2 h-2 bg-white rounded-full animate-pulse shadow-sm" />
+                          <span className="text-white/95 text-xs font-medium drop-shadow-sm">
                             Achieved!
                           </span>
                         </div>
