@@ -308,10 +308,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/rebirth-app/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/rebirth-app/discussions)
-- **Email**: support@rebirth-app.com
-
+- **Email**: konda.akhil456@gmail.com
 ## 🔮 Roadmap
 
 ### Version 1.1
