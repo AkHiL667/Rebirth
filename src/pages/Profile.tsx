@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useStreakTimer } from '@/hooks/useStreakTimer';
 import { useUserName } from '@/hooks/useUserName';
 import { useCustomStats } from '@/hooks/useCustomStats';
@@ -13,7 +13,7 @@ import NotificationSettings from '@/components/NotificationSettings';
 const Profile = () => {
   const { streakData, resetStreak, setCustomQuitDate } = useStreakTimer();
   const { userName, updateUserName } = useUserName();
-  const { customStats, updateCigarettesPerDay, updateCostPerCigarette, getCigarettesAvoided, getMoneySaved } = useCustomStats();
+  const { customStats, updateCigarettesPerDay, updateCostPerCigarette, updateBothStats, getCigarettesAvoided, getMoneySaved } = useCustomStats();
   const { isInstallable, isInstalled, installApp } = usePWA();
   const { toast } = useToast();
   const [isResetting, setIsResetting] = useState(false);
@@ -27,6 +27,11 @@ const Profile = () => {
   const [tempCostPerCigarette, setTempCostPerCigarette] = useState('');
   const [dateError, setDateError] = useState('');
   const [statsError, setStatsError] = useState('');
+
+  // Debug: Log when custom stats change
+  useEffect(() => {
+    console.log('Custom stats changed:', customStats);
+  }, [customStats]);
 
   const handleReset = () => {
     setIsResetting(true);
@@ -88,14 +93,18 @@ const Profile = () => {
       const cigarettesPerDay = parseInt(tempCigarettesPerDay) || 10;
       const costPerCigarette = parseInt(tempCostPerCigarette) || 15;
 
+      console.log('Saving stats:', { cigarettesPerDay, costPerCigarette });
+
       if (cigarettesPerDay < 0 || costPerCigarette < 0) {
         throw new Error('Values cannot be negative');
       }
 
-      updateCigarettesPerDay(cigarettesPerDay);
-      updateCostPerCigarette(costPerCigarette);
+      // Update both values at once to avoid state race conditions
+      updateBothStats(cigarettesPerDay, costPerCigarette);
       setStatsError('');
       setIsEditingStats(false);
+      
+      console.log('Stats saved successfully');
     } catch (error) {
       setStatsError(error instanceof Error ? error.message : 'Invalid values');
     }
@@ -275,13 +284,13 @@ const Profile = () => {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Cigarettes avoided</span>
                 <span className="font-semibold text-foreground">
-                  {getCigarettesAvoided(streakData.days)}
+                  {getCigarettesAvoided(streakData.totalDays)}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Money saved (₹{customStats.costPerCigarette}/cigarette)</span>
                 <span className="font-semibold text-success">
-                  ₹{getMoneySaved(streakData.days)}
+                  ₹{getMoneySaved(streakData.totalDays)}
                 </span>
               </div>
               <div className="flex justify-between">

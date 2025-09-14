@@ -32,13 +32,33 @@ export const useCustomStats = () => {
   };
 
   const updateCigarettesPerDay = (cigarettesPerDay: number) => {
-    const newStats = { ...customStats, customCigarettesPerDay: cigarettesPerDay };
-    saveCustomStats(newStats);
+    setCustomStats(prevStats => {
+      const newStats = { ...prevStats, customCigarettesPerDay: cigarettesPerDay };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newStats));
+      return newStats;
+    });
   };
 
   const updateCostPerCigarette = (costPerCigarette: number) => {
-    const newStats = { ...customStats, costPerCigarette: costPerCigarette };
-    saveCustomStats(newStats);
+    setCustomStats(prevStats => {
+      const newStats = { ...prevStats, costPerCigarette: costPerCigarette };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newStats));
+      return newStats;
+    });
+  };
+
+  const updateBothStats = (cigarettesPerDay: number, costPerCigarette: number) => {
+    console.log('updateBothStats called with:', { cigarettesPerDay, costPerCigarette });
+    setCustomStats(prevStats => {
+      const newStats = { 
+        ...prevStats, 
+        customCigarettesPerDay: cigarettesPerDay,
+        costPerCigarette: costPerCigarette
+      };
+      console.log('Updating stats from:', prevStats, 'to:', newStats);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newStats));
+      return newStats;
+    });
   };
 
   const resetToDefaults = () => {
@@ -63,6 +83,7 @@ export const useCustomStats = () => {
     customStats,
     updateCigarettesPerDay,
     updateCostPerCigarette,
+    updateBothStats,
     resetToDefaults,
     getCigarettesAvoided,
     getMoneySaved,
