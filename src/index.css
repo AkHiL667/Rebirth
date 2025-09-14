@@ -6,57 +6,62 @@
 
 @layer base {
   :root {
-    /* Base colors - Clean white background with soft grays */
-    --background: 0 0% 98%;
-    --foreground: 215 25% 15%;
+    /* Modern glassmorphism design system */
+    --background: 230 50% 98%;
+    --foreground: 224 71% 4%;
 
-    /* Card system - Clean white cards with subtle shadows */
+    /* Glassmorphism cards */
     --card: 0 0% 100%;
-    --card-foreground: 215 25% 15%;
+    --card-foreground: 224 71% 4%;
+    --glass: 0 0% 100% / 0.7;
+    --glass-border: 0 0% 100% / 0.2;
 
     /* Popover colors */
     --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 15%;
+    --popover-foreground: 224 71% 4%;
 
-    /* Primary - Deep forest green for health and growth */
-    --primary: 142 76% 36%;
-    --primary-foreground: 0 0% 98%;
-    --primary-light: 142 76% 45%;
-    --primary-glow: 142 76% 55%;
+    /* Enhanced primary - Deep emerald for rebirth/growth */
+    --primary: 151 83% 42%;
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 151 83% 52%;
+    --primary-glow: 151 100% 65%;
+    --primary-dark: 151 83% 32%;
 
-    /* Secondary - Sky blue for clean air and breath */
-    --secondary: 200 100% 60%;
-    --secondary-foreground: 0 0% 98%;
-    --secondary-light: 200 100% 70%;
+    /* Secondary - Sky blue gradient */
+    --secondary: 199 89% 48%;
+    --secondary-foreground: 0 0% 100%;
+    --secondary-light: 199 89% 58%;
+    --secondary-glow: 199 100% 70%;
 
-    /* Achievement gold - Warm celebration color */
-    --achievement: 45 100% 60%;
-    --achievement-foreground: 215 25% 15%;
-    --achievement-glow: 45 100% 70%;
+    /* Achievement gold - Warm celebration */
+    --achievement: 45 97% 54%;
+    --achievement-foreground: 224 71% 4%;
+    --achievement-glow: 45 100% 65%;
+    --achievement-dark: 45 97% 44%;
 
-    /* Success green - For completed items */
-    --success: 120 60% 50%;
-    --success-foreground: 0 0% 98%;
+    /* Success green */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --success-glow: 142 100% 60%;
 
-    /* Muted colors for subtle elements */
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+    /* Enhanced muted colors */
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
 
     /* Accent colors */
-    --accent: 200 100% 95%;
-    --accent-foreground: 200 100% 20%;
+    --accent: 220 14% 96%;
+    --accent-foreground: 220 9% 15%;
 
-    /* Destructive for reset/warning actions */
-    --destructive: 0 75% 60%;
-    --destructive-foreground: 0 0% 98%;
+    /* Destructive */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    /* Border and input styling */
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 142 76% 36%;
+    /* Border and input */
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 151 83% 42%;
 
-    /* Design system variables */
-    --radius: 1rem;
+    --radius: 1.25rem;
 
     --sidebar-background: 0 0% 98%;
 
@@ -112,18 +117,25 @@
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
 
-    /* Gradients for beautiful backgrounds */
-    --gradient-fresh: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%);
+    /* Modern gradient system */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-light)) 50%, hsl(var(--primary-glow)) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(var(--secondary-light)) 50%, hsl(var(--secondary-glow)) 100%);
     --gradient-achievement: linear-gradient(135deg, hsl(var(--achievement)) 0%, hsl(var(--achievement-glow)) 100%);
-    --gradient-subtle: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--accent)) 100%);
+    --gradient-glass: linear-gradient(135deg, hsl(var(--glass)) 0%, hsl(0 0% 100% / 0.5) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(var(--primary-dark)) 0%, hsl(var(--primary)) 35%, hsl(var(--secondary)) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(var(--success)) 0%, hsl(var(--success-glow)) 100%);
     
-    /* Shadows for depth */
-    --shadow-soft: 0 2px 10px hsl(var(--primary) / 0.1);
-    --shadow-achievement: 0 4px 20px hsl(var(--achievement) / 0.2);
-    --shadow-card: 0 1px 3px hsl(var(--foreground) / 0.1);
+    /* Enhanced shadow system */
+    --shadow-glass: 0 8px 32px hsl(var(--primary) / 0.1), 0 1px 2px hsl(var(--primary) / 0.1);
+    --shadow-achievement: 0 8px 32px hsl(var(--achievement) / 0.3), 0 1px 2px hsl(var(--achievement) / 0.1);
+    --shadow-soft: 0 4px 20px hsl(var(--foreground) / 0.08);
+    --shadow-intense: 0 20px 60px hsl(var(--primary) / 0.15);
+    --shadow-glow: 0 0 40px hsl(var(--primary-glow) / 0.4);
     
-    /* Animation durations */
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Animation system */
+    --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-spring: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    --transition-bounce: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   }
 }
 
@@ -134,35 +146,189 @@
 
   body {
     @apply bg-background text-foreground;
-    background: var(--gradient-subtle);
+    background: linear-gradient(135deg, hsl(var(--background)) 0%, hsl(220 50% 95%) 50%, hsl(var(--accent)) 100%);
+    background-attachment: fixed;
     min-height: 100vh;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
 }
 
 @layer components {
-  /* Hero number highlighting */
+  /* Modern typography system */
+  .text-hero {
+    @apply text-4xl md:text-5xl lg:text-6xl font-bold;
+    font-family: 'Outfit', sans-serif;
+    background: var(--gradient-hero);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .text-display {
+    @apply text-2xl md:text-3xl font-semibold;
+    font-family: 'Outfit', sans-serif;
+  }
+  
+  /* Glassmorphism cards */
+  .glass-card {
+    background: hsl(var(--glass));
+    backdrop-filter: blur(20px);
+    border: 1px solid hsl(var(--glass-border));
+    box-shadow: var(--shadow-glass);
+  }
+  
+  .glass-card-intense {
+    background: hsl(0 0% 100% / 0.9);
+    backdrop-filter: blur(24px);
+    border: 1px solid hsl(0 0% 100% / 0.3);
+    box-shadow: var(--shadow-intense);
+  }
+
+  /* Streak number highlighting with animation */
   .streak-highlight {
-    @apply text-primary font-bold text-2xl;
+    @apply font-black text-3xl md:text-4xl;
+    font-family: 'Outfit', sans-serif;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: pulse-glow 2s ease-in-out infinite alternate;
   }
   
   /* Achievement card styles */
   .achievement-unlocked {
-    @apply bg-white border-2 border-achievement shadow-xl;
     background: var(--gradient-achievement);
     color: hsl(var(--achievement-foreground));
+    border: 2px solid hsl(var(--achievement-glow));
+    box-shadow: var(--shadow-achievement);
+    transform: scale(1);
+    transition: var(--transition-spring);
+  }
+  
+  .achievement-unlocked:hover {
+    transform: scale(1.02) translateY(-2px);
+    box-shadow: var(--shadow-achievement), 0 0 60px hsl(var(--achievement-glow) / 0.6);
   }
   
   .achievement-locked {
-    @apply bg-muted border-border opacity-60;
+    @apply bg-muted/50 border-border/50 opacity-70;
+    backdrop-filter: blur(10px);
+    transition: var(--transition-smooth);
   }
   
-  /* Smooth hover animations */
+  .achievement-locked:hover {
+    @apply opacity-90;
+    transform: translateY(-1px);
+  }
+  
+  /* Enhanced hover animations */
   .hover-lift {
-    @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+    transition: var(--transition-spring);
+  }
+  
+  .hover-lift:hover {
+    transform: translateY(-4px) scale(1.01);
+    box-shadow: var(--shadow-soft);
+  }
+  
+  .hover-bounce {
+    transition: var(--transition-bounce);
+  }
+  
+  .hover-bounce:hover {
+    transform: scale(1.05);
   }
   
   /* Navigation active state */
   .nav-active {
     @apply text-primary;
+    position: relative;
   }
+  
+  .nav-active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    background: hsl(var(--primary));
+    border-radius: 50%;
+    box-shadow: 0 0 8px hsl(var(--primary-glow));
+  }
+  
+  /* Progress rings */
+  .progress-ring {
+    transform: rotate(-90deg);
+    transition: var(--transition-smooth);
+  }
+  
+  .progress-ring circle {
+    transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  /* Floating animation */
+  .float {
+    animation: float 3s ease-in-out infinite;
+  }
+  
+  .float-delayed {
+    animation: float 3s ease-in-out infinite;
+    animation-delay: 1s;
+  }
+  
+  /* Shimmer effect */
+  .shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .shimmer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, hsl(var(--primary-glow) / 0.4), transparent);
+    animation: shimmer 2s infinite;
+  }
+}
+
+@layer utilities {
+  .animate-count-up {
+    animation: count-up 1s ease-out;
+  }
+  
+  .animate-celebration {
+    animation: celebration 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+}
+
+/* Keyframe animations */
+@keyframes pulse-glow {
+  0% { filter: brightness(1) drop-shadow(0 0 5px hsl(var(--primary-glow) / 0.3)); }
+  100% { filter: brightness(1.1) drop-shadow(0 0 20px hsl(var(--primary-glow) / 0.6)); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+@keyframes count-up {
+  from { transform: scale(1.5); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes celebration {
+  0% { transform: scale(0.3) rotate(-180deg); opacity: 0; }
+  50% { transform: scale(1.1) rotate(-90deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
 }
