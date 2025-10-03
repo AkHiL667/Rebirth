@@ -421,6 +421,20 @@
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     -webkit-tap-highlight-color: transparent;
+    /* Disable pull-to-refresh */
+    overscroll-behavior-y: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Disable pull-to-refresh on the root element */
+  #root {
+    overscroll-behavior-y: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Disable pull-to-refresh on all scrollable containers */
+  * {
+    overscroll-behavior-y: none;
   }
 }
 
@@ -592,4 +606,30 @@
   @apply rounded-xl border border-border;
   @apply focus:ring-2 focus:ring-primary/20;
   @apply touch-manipulation;
+}
+
+/* Disable pull-to-refresh globally */
+html, body {
+  overscroll-behavior-y: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure all scrollable elements don't trigger pull-to-refresh */
+* {
+  overscroll-behavior-y: none;
+}
+
+/* Additional PWA-specific pull-to-refresh prevention */
+@media (display-mode: standalone) {
+  html, body {
+    overscroll-behavior-y: none;
+    -webkit-overflow-scrolling: touch;
+    /* Prevent elastic scrolling that can trigger pull-to-refresh */
+    -webkit-overflow-scrolling: auto;
+  }
+  
+  /* Disable touch actions that might trigger pull-to-refresh */
+  body {
+    touch-action: pan-x pan-y;
+  }
 }

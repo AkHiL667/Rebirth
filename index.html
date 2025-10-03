@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="format-detection" content="telephone=no" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -37,5 +38,39 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Prevent pull-to-refresh -->
+    <script>
+      // Prevent pull-to-refresh on mobile devices
+      let startY = 0;
+      let isAtTop = false;
+      
+      document.addEventListener('touchstart', function(e) {
+        startY = e.touches[0].clientY;
+        isAtTop = window.scrollY === 0;
+      }, { passive: false });
+      
+      document.addEventListener('touchmove', function(e) {
+        const currentY = e.touches[0].clientY;
+        const diffY = currentY - startY;
+        
+        // If we're at the top and trying to scroll up, prevent it
+        if (isAtTop && diffY > 0) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+      
+      // Additional prevention for overscroll
+      document.addEventListener('touchmove', function(e) {
+        if (window.scrollY === 0 && e.touches[0].clientY > startY) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+      
+      // Prevent context menu on long press
+      document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+      });
+    </script>
   </body>
 </html>
