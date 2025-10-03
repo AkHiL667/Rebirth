@@ -1,16 +1,13 @@
-const CACHE_NAME = 'rebirth-v1.0.0';
-const STATIC_CACHE = 'rebirth-static-v1.0.0';
-const DYNAMIC_CACHE = 'rebirth-dynamic-v1.0.0';
+const CACHE_NAME = 'rebirth-v1.0.1';
+const STATIC_CACHE = 'rebirth-static-v1.0.1';
+const DYNAMIC_CACHE = 'rebirth-dynamic-v1.0.1';
 
 // Static assets to cache
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/src/main.tsx',
-  '/src/App.tsx',
   '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png',
+  '/Rebirth_icon.png',
   '/favicon.ico',
   // Add other static assets as needed
 ];
@@ -31,14 +28,25 @@ self.addEventListener('install', (event) => {
     caches.open(STATIC_CACHE)
       .then((cache) => {
         console.log('Service Worker: Caching static assets');
-        return cache.addAll(STATIC_ASSETS);
+        // Cache assets individually to handle 404s gracefully
+        return Promise.allSettled(
+          STATIC_ASSETS.map(asset => 
+            cache.add(asset).catch(error => {
+              console.warn(`Service Worker: Failed to cache ${asset}:`, error);
+              return null; // Don't fail the entire operation
+            })
+          )
+        );
       })
-      .then(() => {
-        console.log('Service Worker: Static assets cached');
+      .then((results) => {
+        const successful = results.filter(result => result.status === 'fulfilled').length;
+        const failed = results.filter(result => result.status === 'rejected').length;
+        console.log(`Service Worker: Cached ${successful} assets, ${failed} failed`);
         return self.skipWaiting();
       })
       .catch((error) => {
         console.error('Service Worker: Failed to cache static assets', error);
+        return self.skipWaiting(); // Still activate the service worker
       })
   );
 });
@@ -80,8 +88,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Skip module scripts and other JS files in development
-  if (url.pathname.endsWith('.js') || url.pathname.endsWith('.ts') || url.pathname.endsWith('.tsx')) {
+  // Skip source files and development assets
+  if (url.pathname.endsWith('.ts') || url.pathname.endsWith('.tsx') || 
+      url.pathname.includes('/src/') || 
+      url.pathname.includes('node_modules') ||
+      url.pathname.includes('vite')) {
     return;
   }
 
