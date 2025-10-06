@@ -43,7 +43,7 @@ export const usePWA = () => {
 
     // Register service worker
     const registerServiceWorker = async () => {
-      if ('serviceWorker' in navigator && import.meta.env.PROD) {
+      if ('serviceWorker' in navigator) {
         try {
           const registration = await navigator.serviceWorker.register('/sw.js', {
             scope: '/',
@@ -67,9 +67,11 @@ export const usePWA = () => {
           });
         } catch (error) {
           console.error('Service Worker registration failed:', error);
+          // Even if service worker fails, mark as ready for PWA functionality
+          setPwaState(prev => ({ ...prev, isServiceWorkerReady: true }));
         }
-      } else if (import.meta.env.DEV) {
-        // In development, mark as ready without registering
+      } else {
+        // No service worker support, but still allow PWA functionality
         setPwaState(prev => ({ ...prev, isServiceWorkerReady: true }));
       }
     };
@@ -95,6 +97,9 @@ export const usePWA = () => {
     // Register service worker
     registerServiceWorker();
 
+    // Check installability after a short delay to ensure everything is loaded
+    setTimeout(checkInstallability, 1000);
+
     // Cleanup
     return () => {
       window.removeEventListener('online', handleOnline);
@@ -105,28 +110,42 @@ export const usePWA = () => {
 
   // Install the app
   const installApp = async (): Promise<boolean> => {
-    if (!pwaState.installPrompt) {
-      return false;
-    }
-
-    try {
-      await pwaState.installPrompt.prompt();
-      const choiceResult = await pwaState.installPrompt.userChoice;
-      
-      if (choiceResult.outcome === 'accepted') {
-        setPwaState(prev => ({ 
-          ...prev, 
-          isInstallable: false, 
-          installPrompt: null,
-          isInstalled: true 
-        }));
-        return true;
+    if (pwaState.installPrompt) {
+      try {
+        await pwaState.installPrompt.prompt();
+        const choiceResult = await pwaState.installPrompt.userChoice;
+        
+        if (choiceResult.outcome === 'accepted') {
+          setPwaState(prev => ({ 
+            ...prev, 
+            isInstallable: false, 
+            installPrompt: null,
+            isInstalled: true 
+          }));
+          return true;
+        }
+      } catch (error) {
+        console.error('Failed to install app:', error);
       }
-    } catch (error) {
-      console.error('Failed to install app:', error);
     }
     
+    // Fallback: Show manual installation instructions
     return false;
+  };
+
+  // Check if app can be installed (even without beforeinstallprompt)
+  const checkInstallability = () => {
+    const hasManifest = document.querySelector('link[rel="manifest"]') !== null;
+    const hasServiceWorker = pwaState.isServiceWorkerReady;
+    const isHTTPS = location.protocol === 'https:' || location.hostname === 'localhost';
+    const hasIcons = document.querySelector('link[rel="icon"]') !== null;
+    
+    // Consider app installable if basic PWA requirements are met
+    const canInstall = hasManifest && hasServiceWorker && isHTTPS && hasIcons;
+    
+    if (canInstall && !pwaState.isInstalled) {
+      setPwaState(prev => ({ ...prev, isInstallable: true }));
+    }
   };
 
   // Request notification permission
@@ -152,8 +171,8 @@ export const usePWA = () => {
   const sendNotification = (title: string, options?: NotificationOptions) => {
     if (Notification.permission === 'granted') {
       new Notification(title, {
-        icon: '/icon-192.png',
-        badge: '/icon-192.png',
+        icon: '/Rebirth_icon.png',
+        badge: '/Rebirth_icon.png',
         ...options
       });
     }
@@ -164,5 +183,6 @@ export const usePWA = () => {
     installApp,
     requestNotificationPermission,
     sendNotification,
+    checkInstallability,
   };
 };

@@ -65,47 +65,62 @@ export const useNotifications = () => {
   const scheduleDailyCheckin = useCallback(() => {
     if (!settings.dailyCheckin || permission !== 'granted') return;
 
-    // Clear existing check-in notifications
-    if ('serviceWorker' in navigator && 'getRegistrations' in navigator.serviceWorker) {
-      navigator.serviceWorker.getRegistrations().then(registrations => {
-        registrations.forEach(registration => {
-          if (registration.showNotification) {
-            // This would be handled by the service worker
-          }
-        });
+    // Send message to service worker to schedule notification
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      const now = new Date();
+      const [hours, minutes] = settings.checkinTime.split(':').map(Number);
+      const checkinTime = new Date();
+      checkinTime.setHours(hours, minutes, 0, 0);
+
+      // If the time has passed today, schedule for tomorrow
+      if (checkinTime <= now) {
+        checkinTime.setDate(checkinTime.getDate() + 1);
+      }
+
+      const timeUntilCheckin = checkinTime.getTime() - now.getTime();
+
+      navigator.serviceWorker.controller.postMessage({
+        type: 'SCHEDULE_NOTIFICATION',
+        data: {
+          title: 'Daily Check-in Reminder',
+          body: "Don't forget to check in and maintain your smoke-free streak! 🌟",
+          tag: 'daily-checkin',
+          requireInteraction: true,
+          delay: timeUntilCheckin
+        }
       });
-    }
-
-    // Schedule daily check-in notification
-    const now = new Date();
-    const [hours, minutes] = settings.checkinTime.split(':').map(Number);
-    const checkinTime = new Date();
-    checkinTime.setHours(hours, minutes, 0, 0);
-
-    // If the time has passed today, schedule for tomorrow
-    if (checkinTime <= now) {
-      checkinTime.setDate(checkinTime.getDate() + 1);
-    }
-
-    const timeUntilCheckin = checkinTime.getTime() - now.getTime();
-
-    setTimeout(() => {
+    } else {
+      // Fallback to immediate notification if service worker not available
       sendNotification('Daily Check-in Reminder', {
         body: "Don't forget to check in and maintain your smoke-free streak! 🌟",
         tag: 'daily-checkin',
         requireInteraction: true
       });
-    }, timeUntilCheckin);
+    }
   }, [settings.dailyCheckin, settings.checkinTime, permission, sendNotification]);
 
   const sendMilestoneNotification = useCallback((milestone: string, days: number) => {
     if (!settings.milestoneReminders || permission !== 'granted') return;
 
-    sendNotification('Milestone Achieved! 🎉', {
-      body: `Congratulations! You've reached ${milestone} - ${days} days smoke-free!`,
-      tag: 'milestone',
-      requireInteraction: true
-    });
+    // Use service worker if available, otherwise fallback to direct notification
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'SCHEDULE_NOTIFICATION',
+        data: {
+          title: 'Milestone Achieved! 🎉',
+          body: `Congratulations! You've reached ${milestone} - ${days} days smoke-free!`,
+          tag: 'milestone',
+          requireInteraction: true,
+          delay: 0
+        }
+      });
+    } else {
+      sendNotification('Milestone Achieved! 🎉', {
+        body: `Congratulations! You've reached ${milestone} - ${days} days smoke-free!`,
+        tag: 'milestone',
+        requireInteraction: true
+      });
+    }
   }, [settings.milestoneReminders, permission, sendNotification]);
 
   const sendStreakReminder = useCallback((days: number) => {
@@ -120,21 +135,49 @@ export const useNotifications = () => {
 
     const randomMessage = messages[Math.floor(Math.random() * messages.length)];
 
-    sendNotification('Streak Reminder', {
-      body: randomMessage,
-      tag: 'streak-reminder',
-      requireInteraction: false,
-    });
+    // Use service worker if available, otherwise fallback to direct notification
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'SCHEDULE_NOTIFICATION',
+        data: {
+          title: 'Streak Reminder',
+          body: randomMessage,
+          tag: 'streak-reminder',
+          requireInteraction: false,
+          delay: 0
+        }
+      });
+    } else {
+      sendNotification('Streak Reminder', {
+        body: randomMessage,
+        tag: 'streak-reminder',
+        requireInteraction: false,
+      });
+    }
   }, [settings.streakReminders, permission, sendNotification]);
 
   const sendAchievementNotification = useCallback((achievement: string) => {
     if (!settings.achievementUnlocks || permission !== 'granted') return;
 
-    sendNotification('New Achievement Unlocked! 🏆', {
-      body: `You've unlocked: ${achievement}`,
-      tag: 'achievement',
-      requireInteraction: true
-    });
+    // Use service worker if available, otherwise fallback to direct notification
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'SCHEDULE_NOTIFICATION',
+        data: {
+          title: 'New Achievement Unlocked! 🏆',
+          body: `You've unlocked: ${achievement}`,
+          tag: 'achievement',
+          requireInteraction: true,
+          delay: 0
+        }
+      });
+    } else {
+      sendNotification('New Achievement Unlocked! 🏆', {
+        body: `You've unlocked: ${achievement}`,
+        tag: 'achievement',
+        requireInteraction: true
+      });
+    }
   }, [settings.achievementUnlocks, permission, sendNotification]);
 
   const sendCustomNotification = useCallback((title: string, body: string, options?: NotificationOptions) => {
@@ -146,12 +189,28 @@ export const useNotifications = () => {
     });
   }, [permission, sendNotification]);
 
+  // Register for periodic background sync
+  const registerPeriodicSync = useCallback(async () => {
+    if ('serviceWorker' in navigator && 'periodicSync' in window.ServiceWorkerRegistration.prototype) {
+      try {
+        const registration = await navigator.serviceWorker.ready;
+        await registration.periodicSync.register('daily-checkin-reminder', {
+          minInterval: 24 * 60 * 60 * 1000, // 24 hours
+        });
+        console.log('Periodic background sync registered');
+      } catch (error) {
+        console.log('Periodic background sync not supported or failed:', error);
+      }
+    }
+  }, []);
+
   // Schedule notifications when settings change
   useEffect(() => {
     if (permission === 'granted') {
       scheduleDailyCheckin();
+      registerPeriodicSync();
     }
-  }, [permission, scheduleDailyCheckin]);
+  }, [permission, scheduleDailyCheckin, registerPeriodicSync]);
 
   return {
     isSupported,

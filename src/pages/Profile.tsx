@@ -405,23 +405,33 @@ const Profile = () => {
                 </span>
               </div>
             ) : isInstallable ? (
-              <Button 
-                onClick={handleInstallApp}
-                disabled={isInstalling}
-                className="w-full bg-primary hover:bg-primary-light text-primary-foreground"
-              >
-                {isInstalling ? (
-                  <>
-                    <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Installing...
-                  </>
-                ) : (
-                  <>
-                    <Download className="w-4 h-4 mr-2" />
-                    Install Rebirth App
-                  </>
-                )}
-              </Button>
+              <div className="space-y-3">
+                <Button 
+                  onClick={handleInstallApp}
+                  disabled={isInstalling}
+                  className="w-full bg-primary hover:bg-primary-light text-primary-foreground"
+                >
+                  {isInstalling ? (
+                    <>
+                      <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Installing...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-4 h-4 mr-2" />
+                      Install Rebirth App
+                    </>
+                  )}
+                </Button>
+                <div className="text-xs text-muted-foreground text-center">
+                  <p>If the install button doesn't work, try:</p>
+                  <ul className="mt-1 space-y-1">
+                    <li>• Look for the install icon in your browser's address bar</li>
+                    <li>• Use the browser menu (⋮) → "Install app"</li>
+                    <li>• On mobile: "Add to Home Screen" from browser menu</li>
+                  </ul>
+                </div>
+              </div>
             ) : (
               <div className="space-y-3">
                 <div className="p-3 bg-muted/50 border border-border rounded-lg">

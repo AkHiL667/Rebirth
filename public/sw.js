@@ -206,6 +206,39 @@ self.addEventListener('sync', (event) => {
   }
 });
 
+// Periodic background sync for notifications
+self.addEventListener('periodicsync', (event) => {
+  if (event.tag === 'daily-checkin-reminder') {
+    console.log('Service Worker: Periodic sync for daily check-in');
+    event.waitUntil(
+      self.registration.showNotification('Daily Check-in Reminder', {
+        body: "Don't forget to check in and maintain your smoke-free streak! 🌟",
+        icon: '/Rebirth_icon.png',
+        badge: '/Rebirth_icon.png',
+        tag: 'daily-checkin',
+        requireInteraction: true,
+        vibrate: [200, 100, 200],
+        data: {
+          dateOfArrival: Date.now(),
+          primaryKey: 1
+        },
+        actions: [
+          {
+            action: 'checkin',
+            title: 'Check In',
+            icon: '/Rebirth_icon.png'
+          },
+          {
+            action: 'dismiss',
+            title: 'Dismiss',
+            icon: '/Rebirth_icon.png'
+          }
+        ]
+      })
+    );
+  }
+});
+
 // Push notification event
 self.addEventListener('push', (event) => {
   console.log('Service Worker: Push notification received');
@@ -263,5 +296,36 @@ self.addEventListener('notificationclick', (event) => {
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  } else if (event.data && event.data.type === 'SCHEDULE_NOTIFICATION') {
+    const { data } = event.data;
+    console.log('Service Worker: Scheduling notification', data);
+    
+    // Schedule the notification
+    setTimeout(() => {
+      self.registration.showNotification(data.title, {
+        body: data.body,
+        icon: '/Rebirth_icon.png',
+        badge: '/Rebirth_icon.png',
+        tag: data.tag,
+        requireInteraction: data.requireInteraction || false,
+        vibrate: [200, 100, 200],
+        data: {
+          dateOfArrival: Date.now(),
+          primaryKey: 1
+        },
+        actions: [
+          {
+            action: 'checkin',
+            title: 'Check In',
+            icon: '/Rebirth_icon.png'
+          },
+          {
+            action: 'dismiss',
+            title: 'Dismiss',
+            icon: '/Rebirth_icon.png'
+          }
+        ]
+      });
+    }, data.delay || 0);
   }
 });
