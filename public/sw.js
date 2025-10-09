@@ -1,6 +1,6 @@
-const CACHE_NAME = 'rebirth-v1.0.1';
-const STATIC_CACHE = 'rebirth-static-v1.0.1';
-const DYNAMIC_CACHE = 'rebirth-dynamic-v1.0.1';
+const CACHE_NAME = 'rebirth-v1.0.2';
+const STATIC_CACHE = 'rebirth-static-v1.0.2';
+const DYNAMIC_CACHE = 'rebirth-dynamic-v1.0.2';
 
 // Static assets to cache
 const STATIC_ASSETS = [
@@ -96,45 +96,21 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  event.respondWith(
-    caches.match(request)
-      .then((cachedResponse) => {
-        // Return cached version if available
-        if (cachedResponse) {
-          console.log('Service Worker: Serving from cache', request.url);
-          return cachedResponse;
-        }
-
-        // Otherwise, fetch from network
-        return fetch(request)
-          .then((networkResponse) => {
-            // Don't cache if not a valid response
-            if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
-              return networkResponse;
-            }
-
-            // Clone the response
-            const responseToCache = networkResponse.clone();
-
-            // Cache dynamic content
-            if (DYNAMIC_ROUTES.some(route => url.pathname === route || url.pathname.startsWith(route + '/'))) {
-              caches.open(DYNAMIC_CACHE)
-                .then((cache) => {
-                  cache.put(request, responseToCache);
-                });
-            }
-
-            return networkResponse;
-          })
-          .catch(() => {
-            // If network fails, try to serve a fallback
-            if (url.pathname === '/' || url.pathname === '/home') {
-              return caches.match('/index.html');
-            }
-            
-            // For other routes, return a basic offline page
-            return new Response(
-              `
+  // For navigations (HTML pages), prefer network first to avoid serving stale app shell
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch('/index.html', { cache: 'no-store' })
+        .then((networkResponse) => {
+          // Update cached index.html
+          const responseToCache = networkResponse.clone();
+          caches.open(STATIC_CACHE).then((cache) => cache.put('/index.html', responseToCache));
+          return networkResponse;
+        })
+        .catch(async () => {
+          const cached = await caches.match('/index.html');
+          if (cached) return cached;
+          return new Response(
+            `
               <!DOCTYPE html>
               <html>
                 <head>
@@ -182,15 +158,33 @@ self.addEventListener('fetch', (event) => {
                   </div>
                 </body>
               </html>
-              `,
-              {
-                headers: {
-                  'Content-Type': 'text/html',
-                },
-              }
-            );
-          });
-      })
+            `,
+            { headers: { 'Content-Type': 'text/html' } }
+          );
+        })
+    );
+    return;
+  }
+
+  event.respondWith(
+    caches.match(request).then((cachedResponse) => {
+      if (cachedResponse) {
+        console.log('Service Worker: Serving from cache', request.url);
+        return cachedResponse;
+      }
+      return fetch(request)
+        .then((networkResponse) => {
+          if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
+            return networkResponse;
+          }
+          const responseToCache = networkResponse.clone();
+          if (DYNAMIC_ROUTES.some(route => url.pathname === route || url.pathname.startsWith(route + '/'))) {
+            caches.open(DYNAMIC_CACHE).then((cache) => cache.put(request, responseToCache));
+          }
+          return networkResponse;
+        })
+        .catch(() => caches.match(request));
+    })
   );
 });
 
