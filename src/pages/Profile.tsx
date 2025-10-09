@@ -118,8 +118,6 @@ const Profile = () => {
   };
 
   const handleInstallApp = async () => {
-    if (!isInstallable) return;
-    
     setIsInstalling(true);
     try {
       const success = await installApp();
@@ -127,6 +125,11 @@ const Profile = () => {
         toast({
           title: "App Installed! 🎉",
           description: "Rebirth has been successfully installed on your device.",
+        });
+      } else {
+        toast({
+          title: "Install from browser menu",
+          description: "Use your browser menu to Install App / Add to Home Screen.",
         });
       }
     } catch (error) {
@@ -404,7 +407,7 @@ const Profile = () => {
                   App is installed on your device
                 </span>
               </div>
-            ) : isInstallable ? (
+            ) : (
               <div className="space-y-3">
                 <Button 
                   onClick={handleInstallApp}
@@ -429,22 +432,6 @@ const Profile = () => {
                     <li>• Look for the install icon in your browser's address bar</li>
                     <li>• Use the browser menu (⋮) → "Install app"</li>
                     <li>• On mobile: "Add to Home Screen" from browser menu</li>
-                  </ul>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="p-3 bg-muted/50 border border-border rounded-lg">
-                  <p className="text-sm text-muted-foreground text-center">
-                    App installation is not available on this device or browser.
-                  </p>
-                </div>
-                <div className="text-xs text-muted-foreground text-center">
-                  <p>To install the app:</p>
-                  <ul className="mt-1 space-y-1">
-                    <li>• Use Chrome, Edge, or Safari on mobile</li>
-                    <li>• Look for the install button in your browser menu</li>
-                    <li>• Or add to home screen from browser options</li>
                   </ul>
                 </div>
               </div>

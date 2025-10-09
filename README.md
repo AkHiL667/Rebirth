@@ -90,14 +90,20 @@ The built files will be in the `dist` directory, ready for deployment.
 
 ### Mobile (iOS Safari, Android Chrome)
 1. Open the app in your mobile browser
-2. Tap the "Install Rebirth App" button in the Profile section
-3. Follow the browser's installation prompts
-4. The app will appear on your home screen
+2. If you see an Install/Add to Home Screen prompt in the address bar/menu, use it
+3. If the in‑app Install button is visible in Profile, tap it to trigger the native prompt
+4. If no button is visible, use the Manual Installation steps below
+5. The app will appear on your home screen
 
 ### Manual Installation
 If automatic installation isn't available:
 - **iOS**: Tap the share button → "Add to Home Screen"
 - **Android**: Tap the menu (⋮) → "Add to Home Screen"
+
+#### Why an in‑app Install button may not appear
+- Modern browsers sometimes suppress the `beforeinstallprompt` event and show their own install UI (omnibox/menu)
+- The app remains installable; use the browser UI described above
+- In the Profile page, the Install button remains available and will either trigger the prompt (when supported) or guide you to install via the browser menu
 
 ## 🎯 Usage Guide
 
@@ -131,9 +137,9 @@ If automatic installation isn't available:
 - **Lucide React**: Beautiful icon library
 
 ### PWA Features
-- **Service Worker**: Offline functionality and background sync
+- **Service Worker**: Offline functionality and background scheduling
 - **Web App Manifest**: App installation and metadata
-- **Push Notifications**: User engagement and reminders
+- **Notifications**: Daily reminders and milestone celebrations
 - **Haptic Feedback**: Touch device vibration
 - **Gesture Navigation**: Swipe and pull interactions
 
@@ -230,11 +236,14 @@ The PWA is configured in `public/manifest.json`:
 
 ### Service Worker
 The service worker (`public/sw.js`) provides:
-- Offline functionality
-- Background sync
-- Push notifications
-- Cache management
-- Update handling
+- Offline functionality and smart caching
+- Background scheduling for local notifications (via messages from the app)
+- Optional periodic background sync (browser support varies; falls back gracefully)
+- Basic push handler (for future server‑driven push)
+- Update handling and versioned caches
+
+Notes:
+- Background timers may be throttled by OS/browser when the app is closed. For guaranteed delivery while fully closed, integrate server push or alarm services.
 
 ## 📊 Data Management
 
@@ -276,6 +285,34 @@ Deploy to any static hosting service:
 - Service worker support
 - Push notification support
 - Modern browser support
+
+### Vercel / Netlify
+- This app builds as a static site (`dist/`) and works well on Vercel/Netlify
+- Ensure `sw.js` and `manifest.json` are served from the site root (default config already does this)
+
+### Cache Busting
+- The service worker uses versioned cache names in `public/sw.js`
+- When static assets or caching strategy changes, bump the version to force updates
+
+## 🧩 Troubleshooting
+
+- I don’t see an Install button
+  - Use the browser’s install UI (omnibox icon or menu → Install/Add to Home Screen)
+  - Ensure HTTPS (or `localhost`) and that the tab isn’t private/incognito
+  - Confirm that `/manifest.json` and `/sw.js` are reachable
+
+- Notifications don’t appear while the app is closed
+  - Local scheduled notifications depend on OS/browser background allowances
+  - For reliable delivery while closed, integrate Push Notifications with a server; the worker includes a basic `push` handler
+
+- Service worker changes don’t apply
+  - Hard‑refresh, or close all app tabs and re‑open
+  - On mobile PWA, swipe it away and reopen to activate updates
+
+## 🔐 Permissions
+
+- Notifications require user consent. If permission is “Denied”, re‑enable it in your browser/site settings.
+- Background sync/periodic sync support varies by browser/OS and may be unavailable.
 
 ## 🤝 Contributing
 
