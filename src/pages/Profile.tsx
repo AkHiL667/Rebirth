@@ -5,11 +5,12 @@ import { useCustomStats } from '@/hooks/useCustomStats';
 import { useDailyCheckin } from '@/hooks/useDailyCheckin';
 import { usePWA } from '@/hooks/usePWA';
 import { useToast } from '@/hooks/use-toast';
-import { User, RotateCcw, AlertTriangle, Edit2, Calendar, Check, Settings, Download, Smartphone, CheckCircle } from 'lucide-react';
+import { User, RotateCcw, AlertTriangle, Edit2, Calendar, Check, Settings, Download, Smartphone, CheckCircle, Cloud, RefreshCw, CloudOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import NotificationSettings from '@/components/NotificationSettings';
+import { useCloudSync } from '@/hooks/useCloudSync';
 
 const Profile = () => {
   const { streakData, resetStreak, setCustomQuitDate } = useStreakTimer();
@@ -17,6 +18,7 @@ const Profile = () => {
   const { customStats, updateCigarettesPerDay, updateCostPerCigarette, updateBothStats, getCigarettesAvoided, getMoneySaved } = useCustomStats();
   const { isInstallable, isInstalled, installApp } = usePWA();
   const { toast } = useToast();
+  const { isSyncing, lastSyncedAt, syncStatus, syncNow } = useCloudSync();
   const [isResetting, setIsResetting] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingQuitDate, setIsEditingQuitDate] = useState(false);
@@ -36,12 +38,57 @@ const Profile = () => {
 
   const { clearCheckins } = useDailyCheckin();
 
+  // ─── All localStorage keys used by Rebirth ─────────────
+  const ALL_KEYS = [
+    'rebirth_quit_date',
+    'rebirth_daily_checkins',
+    'rebirth_daily_scores',
+    'rebirth_user_goals',
+    'rebirth_custom_stats',
+    'rebirth_user_name',
+    'rebirth_unlocked_achievements',
+    'rebirth_rank_seen',
+    'rebirth_expenses',
+    'notification-settings',
+  ];
+
+  // ─── Start Over: archive current session with serial number, then reset ─
   const handleReset = () => {
     setIsResetting(true);
     setTimeout(() => {
+      // Find next serial number
+      let maxSerial = 0;
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k?.startsWith('rebirth_session_')) {
+          const num = parseInt(k.replace('rebirth_session_', ''), 10);
+          if (num > maxSerial) maxSerial = num;
+        }
+      }
+      const nextSerial = maxSerial + 1;
+
+      // Snapshot all current data into a numbered session
+      const snapshot: Record<string, unknown> = { archivedAt: new Date().toISOString(), serial: nextSerial };
+      for (const key of ALL_KEYS) {
+        const val = localStorage.getItem(key);
+        if (val !== null) {
+          try { snapshot[key] = JSON.parse(val); } catch { snapshot[key] = val; }
+        }
+      }
+      localStorage.setItem(`rebirth_session_${nextSerial}`, JSON.stringify(snapshot));
+
+      // Reset to fresh state
       resetStreak();
       clearCheckins();
+      localStorage.removeItem('rebirth_daily_scores');
+      localStorage.removeItem('rebirth_rank_seen');
+      localStorage.removeItem('rebirth_unlocked_achievements');
+      localStorage.removeItem('rebirth_user_goals');
       setIsResetting(false);
+
+      // Push updated state (with archive) to cloud after a delay
+      // so all localStorage writes from resetStreak/clearCheckins are done
+      setTimeout(() => syncNow(), 1500);
     }, 500);
   };
 
@@ -442,6 +489,56 @@ const Profile = () => {
             )}
           </div>
 
+          {/* Cloud Sync */}
+          <div className="p-6 bg-card rounded-2xl shadow-soft border border-border">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center space-x-3">
+                <Cloud className="w-5 h-5 text-primary" />
+                <h3 className="text-lg font-semibold text-foreground">Cloud Backup</h3>
+              </div>
+              {syncStatus === 'synced' && <CheckCircle className="w-4 h-4 text-emerald-500" />}
+              {syncStatus === 'failed' && <CloudOff className="w-4 h-4 text-red-500" />}
+              {syncStatus === 'disabled' && <CloudOff className="w-4 h-4 text-muted-foreground" />}
+            </div>
+
+            <div className="mb-4">
+              {syncStatus === 'disabled' && (
+                <p className="text-sm text-muted-foreground">Supabase not configured. Add credentials to .env to enable cloud sync.</p>
+              )}
+              {syncStatus === 'synced' && lastSyncedAt && (
+                <p className="text-sm text-emerald-600">
+                  ✅ Synced {new Date(lastSyncedAt).toLocaleString()}
+                </p>
+              )}
+              {syncStatus === 'syncing' && (
+                <p className="text-sm text-primary">⏳ Syncing...</p>
+              )}
+              {syncStatus === 'failed' && (
+                <p className="text-sm text-red-500">❌ Sync failed. Your data is safe locally.</p>
+              )}
+              {syncStatus === 'idle' && !lastSyncedAt && (
+                <p className="text-sm text-muted-foreground">Not synced yet.</p>
+              )}
+              {syncStatus === 'idle' && lastSyncedAt && (
+                <p className="text-sm text-muted-foreground">
+                  Last synced: {new Date(lastSyncedAt).toLocaleString()}
+                </p>
+              )}
+            </div>
+
+            {syncStatus !== 'disabled' && (
+              <Button
+                onClick={syncNow}
+                disabled={isSyncing}
+                variant="outline"
+                className="w-full"
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+                {isSyncing ? 'Syncing...' : 'Sync Now'}
+              </Button>
+            )}
+          </div>
+
           {/* Reset Section */}
           <div className="p-6 bg-card rounded-2xl shadow-soft border border-destructive/20">
             <div className="flex items-start space-x-3 mb-4">
@@ -449,7 +546,7 @@ const Profile = () => {
               <div>
                 <h3 className="text-lg font-semibold text-foreground mb-1">Start Over</h3>
                 <p className="text-sm text-muted-foreground">
-                  Reset your streak and begin a new journey. This will erase all progress and goals.
+                  Archive your current journey and begin fresh. Your old data is saved and included in backups.
                 </p>
               </div>
             </div>
@@ -469,8 +566,8 @@ const Profile = () => {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will permanently erase all your progress, achievements, and goals. 
-                    Your streak will reset to 0 and your quit date will be set to today.
+                    Your current progress will be archived (included in backups). 
+                    Streak resets to 0 and quit date becomes today. Your expenses and profile are kept.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

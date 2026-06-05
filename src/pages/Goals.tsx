@@ -231,21 +231,28 @@ const Score = () => {
   const moneySaved = cigsAvoided * customStats.costPerCigarette;
   const hoursReclaimed = Math.round(cigsAvoided * 5 / 60);
 
-  // ─── Heatmap (35 days) ────────────────────────────────
-  const heatmap = useMemo(() => {
-    const days: { date: string; level: number }[] = [];
+  // ─── Bar Chart (last 14 days) ───────────────────────────
+  const barChart = useMemo(() => {
+    const days: { date: string; xp: number; label: string }[] = [];
     const now = new Date();
-    for (let i = 34; i >= 0; i--) {
+    for (let i = 13; i >= 0; i--) {
       const d = new Date(now);
       d.setDate(d.getDate() - i);
       const ds = d.toISOString().split('T')[0];
       const hasCheckin = checkins.some(c => c.date === ds && c.checkedIn);
-      const dayScore = history[ds];
-      const activity = (hasCheckin ? 2 : 0) + (dayScore?.gym ? 1 : 0) + (dayScore?.cravings ? 1 : 0);
-      days.push({ date: ds, level: Math.min(activity, 4) });
+      const dayData = history[ds];
+      let xp = 0;
+      if (hasCheckin) xp += XP.SMOKE_FREE + XP.CHECKIN;
+      if (dayData?.gym) xp += dayData.gym * XP.GYM;
+      if (dayData?.cravings) xp += dayData.cravings * XP.CRAVING;
+      if (dayData?.smoked) xp -= dayData.smoked * Math.abs(XP.SMOKED);
+      const label = d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+      days.push({ date: ds, xp, label });
     }
     return days;
   }, [checkins, history]);
+
+  const maxBarXP = Math.max(...barChart.map(d => Math.abs(d.xp)), 1);
 
   // Badge colors
   const badgeGradient = tier
@@ -511,26 +518,40 @@ const Score = () => {
           </div>
         </div>
 
-        {/* ═══════════ STREAK HEATMAP ═══════════ */}
+        {/* ═══════════ XP BAR CHART ═══════════ */}
         <div className="glass-card rounded-3xl p-5">
-          <h3 className="text-sm font-bold text-foreground font-display uppercase tracking-wide mb-3">Last 35 Days</h3>
-          <div className="grid grid-cols-7 gap-1.5">
-            {heatmap.map((d, i) => {
-              const intensityMap = ['bg-muted/10', 'bg-primary/25', 'bg-primary/50', 'bg-primary/75', 'bg-primary'];
+          <h3 className="text-sm font-bold text-foreground font-display uppercase tracking-wide mb-4">Last 14 Days</h3>
+          <div className="flex items-end gap-[5px] h-40">
+            {barChart.map((d, i) => {
+              const isToday = d.date === today;
+              const barH = maxBarXP > 0 ? (Math.abs(d.xp) / maxBarXP) * 100 : 0;
+              const isNeg = d.xp < 0;
               return (
-                <div
-                  key={i}
-                  title={d.date}
-                  className={`aspect-square rounded-[5px] transition-colors ${intensityMap[d.level]}`}
-                />
+                <div key={i} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+                  {/* XP label */}
+                  <span className={`text-[8px] font-bold ${isNeg ? 'text-red-500' : d.xp > 0 ? 'text-primary' : 'text-muted-foreground/40'}`}>
+                    {d.xp !== 0 ? (isNeg ? '' : '+') + d.xp : ''}
+                  </span>
+                  {/* Bar */}
+                  <div
+                    className={`w-full rounded-t-md transition-all duration-500 ${
+                      isNeg
+                        ? 'bg-gradient-to-t from-red-500 to-red-400'
+                        : d.xp > 0
+                          ? isToday
+                            ? 'bg-gradient-to-t from-primary to-primary-light shadow-sm shadow-primary/20'
+                            : 'bg-gradient-to-t from-primary/70 to-primary/50'
+                          : 'bg-muted/10'
+                    }`}
+                    style={{ height: `${Math.max(barH, 3)}%`, minHeight: 3 }}
+                  />
+                  {/* Date label */}
+                  <span className={`text-[7px] ${isToday ? 'text-primary font-bold' : 'text-muted-foreground/60'}`}>
+                    {d.label.split(' ')[1]}
+                  </span>
+                </div>
               );
             })}
-          </div>
-          <div className="flex items-center justify-end gap-2 mt-2.5">
-            {['bg-muted/10', 'bg-primary/25', 'bg-primary/50', 'bg-primary/75', 'bg-primary'].map((c, i) => (
-              <div key={i} className={`w-2.5 h-2.5 rounded-sm ${c}`} />
-            ))}
-            <span className="text-[10px] text-muted-foreground ml-0.5">More</span>
           </div>
         </div>
 

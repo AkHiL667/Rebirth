@@ -45,7 +45,7 @@ export const useGestureNavigation = (options: GestureNavigationOptions = {}) => 
   const pullDistanceRef = useRef(0);
 
   // Navigation routes in order
-  const navigationRoutes = ['/', '/achievements', '/score', '/profile'];
+  const navigationRoutes = ['/', '/achievements', '/score', '/expenses'];
   
   const getCurrentRouteIndex = useCallback(() => {
     return navigationRoutes.findIndex(route => location.pathname === route);

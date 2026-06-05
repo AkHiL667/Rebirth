@@ -7,12 +7,14 @@ import Layout from "./components/Layout";
 import Home from "./pages/Home";
 import Achievements from "./pages/Achievements";
 import Score from "./pages/Goals";
+import Expenses from "./pages/Expenses";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import PWAInstallBanner from "./components/PWAInstallBanner";
 import { usePWA } from "./hooks/usePWA";
 import { useGestureNavigation } from "./hooks/useGestureNavigation";
 import { useNotifications } from "./hooks/useNotifications";
+import { CloudSyncProvider } from './hooks/useCloudSync';
 import { useEffect } from "react";
 
 const queryClient = new QueryClient();
@@ -23,7 +25,7 @@ const AppContent = () => {
   
   // Initialize gesture navigation
   useGestureNavigation({
-    enableSwipeNavigation: true,
+    enableSwipeNavigation: false,
     enablePullToRefresh: true,
     onPullToRefresh: () => {
       // Handle pull-to-refresh
@@ -50,6 +52,7 @@ const AppContent = () => {
           <Route path="/" element={<Home />} />
           <Route path="/achievements" element={<Achievements />} />
           <Route path="/score" element={<Score />} />
+          <Route path="/expenses" element={<Expenses />} />
           <Route path="/profile" element={<Profile />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
@@ -65,11 +68,13 @@ const AppContent = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AppContent />
-      </BrowserRouter>
+      <CloudSyncProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AppContent />
+        </BrowserRouter>
+      </CloudSyncProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
