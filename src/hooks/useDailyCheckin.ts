@@ -149,11 +149,19 @@ export const useDailyCheckin = () => {
     };
   };
 
+  // Clear all check-ins (used on streak reset / start over)
+  const clearCheckins = () => {
+    setCheckins([]);
+    setTodayCheckedIn(false);
+    localStorage.removeItem(STORAGE_KEY);
+  };
+
   return {
     checkins,
     todayCheckedIn,
     isLoading,
     checkInToday,
+    clearCheckins,
     getCheckinStreak,
     getTotalCheckins,
     getCheckinForDate,

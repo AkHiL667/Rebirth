@@ -1,4 +1,4 @@
-import { User, Home, Trophy, Target } from 'lucide-react';
+import { User, Home, Trophy, Crosshair } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 const Navigation = () => {
@@ -7,7 +7,7 @@ const Navigation = () => {
   const navItems = [
     { path: '/', icon: Home, label: 'Home' },
     { path: '/achievements', icon: Trophy, label: 'Achievements' },
-    { path: '/goals', icon: Target, label: 'Goals' },
+    { path: '/score', icon: Crosshair, label: 'Score' },
     { path: '/profile', icon: User, label: 'Profile' }
   ];
 

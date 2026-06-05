@@ -511,6 +511,15 @@
   @apply translate-y-4;
 }
 
+/* Hide scrollbar */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Haptic feedback visual indicators */
 .haptic-light {
   @apply active:scale-[0.98] transition-transform duration-100;

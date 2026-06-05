@@ -70,8 +70,11 @@ const StreakDisplay = () => {
 
           {/* Motivational text */}
           <div className="text-center">
-            <p className="text-lg font-semibold text-foreground mb-2 font-display">
-              Smoke-Free Journey! 🌟
+            <p className="text-lg font-semibold text-foreground mb-1 font-display">
+              ⚔️ Forging a Better Self
+            </p>
+            <p className="text-sm italic text-muted-foreground mb-2">
+              One day. One choice. One victory at a time.
             </p>
             <div className="flex items-center justify-center space-x-2 text-sm text-muted-foreground">
               <Calendar className="w-4 h-4" />

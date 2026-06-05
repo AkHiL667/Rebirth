@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useStreakTimer } from '@/hooks/useStreakTimer';
 import { useUserName } from '@/hooks/useUserName';
 import { useCustomStats } from '@/hooks/useCustomStats';
+import { useDailyCheckin } from '@/hooks/useDailyCheckin';
 import { usePWA } from '@/hooks/usePWA';
 import { useToast } from '@/hooks/use-toast';
 import { User, RotateCcw, AlertTriangle, Edit2, Calendar, Check, Settings, Download, Smartphone, CheckCircle } from 'lucide-react';
@@ -33,10 +34,13 @@ const Profile = () => {
     console.log('Custom stats changed:', customStats);
   }, [customStats]);
 
+  const { clearCheckins } = useDailyCheckin();
+
   const handleReset = () => {
     setIsResetting(true);
     setTimeout(() => {
       resetStreak();
+      clearCheckins();
       setIsResetting(false);
     }, 500);
   };

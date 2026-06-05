@@ -69,11 +69,11 @@ const DailyCheckin = () => {
             </div>
             
             <h3 className="text-xl font-bold text-success mb-2 font-display">
-              ✅ Checked In Today!
+              ✅ Won today!
             </h3>
             
             <p className="text-muted-foreground mb-4">
-              You're staying strong on your smoke-free journey!
+              brick by brick, victory by victory. Keep the streak alive!
             </p>
             
             <div className="flex items-center justify-center space-x-6 text-sm">
@@ -113,11 +113,11 @@ const DailyCheckin = () => {
           </div>
           
           <h3 className="text-xl font-bold text-foreground mb-2 font-display">
-            Daily Check-in
+            ⚔️ Daily Victory
           </h3>
           
-          <p className="text-muted-foreground mb-4">
-            Confirm you stayed smoke-free today
+          <p className="text-muted-foreground italic mb-4">
+            Did you win today?
           </p>
           
           <div className="flex items-center justify-center space-x-4 mb-6">
@@ -125,13 +125,13 @@ const DailyCheckin = () => {
               <div className="text-2xl font-bold text-primary font-display">
                 {streak}
               </div>
-              <div className="text-xs text-muted-foreground">Day Streak</div>
+              <div className="text-xs text-muted-foreground">Current Streak</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-achievement font-display">
                 {stats.totalCheckins}
               </div>
-              <div className="text-xs text-muted-foreground">Total Check-ins</div>
+              <div className="text-xs text-muted-foreground">Victories Won</div>
             </div>
           </div>
           
@@ -149,7 +149,7 @@ const DailyCheckin = () => {
             ) : (
               <>
                 <CheckCircle className="w-5 h-5 mr-2" />
-                Check In Today
+                Battle Won!
               </>
             )}
           </Button>

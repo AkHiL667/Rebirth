@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 
 const TopBar = () => {
   return (
-    <header className="fixed top-0 left-0 right-0 z-50">
+    <header className="fixed top-0 left-0 right-0 z-50 pt-[env(safe-area-inset-top,0px)] bg-background/80 backdrop-blur-md">
       <div className="glass-card border-0 border-b border-white/20 rounded-none">
         <div className="flex justify-between items-center h-16 px-6">
           {/* Logo with gradient text */}
