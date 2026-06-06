@@ -5,12 +5,25 @@ import { useCustomStats } from '@/hooks/useCustomStats';
 import { useDailyCheckin } from '@/hooks/useDailyCheckin';
 import { usePWA } from '@/hooks/usePWA';
 import { useToast } from '@/hooks/use-toast';
-import { User, RotateCcw, AlertTriangle, Edit2, Calendar, Check, Settings, Download, Smartphone, CheckCircle, Cloud, RefreshCw, CloudOff } from 'lucide-react';
+import { User, RotateCcw, AlertTriangle, Edit2, Calendar, Check, Settings, Download, Smartphone, CheckCircle, Cloud, RefreshCw, CloudOff, AlertCircle, CloudDownload, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import NotificationSettings from '@/components/NotificationSettings';
 import { useCloudSync } from '@/hooks/useCloudSync';
+import { gatherLocalState } from '@/services/cloudSync';
+
+function getRelativeTime(isoString: string): string {
+  const diff = Date.now() - new Date(isoString).getTime();
+  const seconds = Math.floor(diff / 1000);
+  if (seconds < 60) return 'just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+  const days = Math.floor(hours / 24);
+  return `${days} day${days > 1 ? 's' : ''} ago`;
+}
 
 const Profile = () => {
   const { streakData, resetStreak, setCustomQuitDate } = useStreakTimer();
@@ -18,7 +31,7 @@ const Profile = () => {
   const { customStats, updateCigarettesPerDay, updateCostPerCigarette, updateBothStats, getCigarettesAvoided, getMoneySaved } = useCustomStats();
   const { isInstallable, isInstalled, installApp } = usePWA();
   const { toast } = useToast();
-  const { isSyncing, lastSyncedAt, syncStatus, syncNow } = useCloudSync();
+  const { isSyncing, lastSyncedAt, syncStatus, syncPending, syncNow, restoreNow, scheduleSync } = useCloudSync();
   const [isResetting, setIsResetting] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingQuitDate, setIsEditingQuitDate] = useState(false);
@@ -86,9 +99,8 @@ const Profile = () => {
       localStorage.removeItem('rebirth_user_goals');
       setIsResetting(false);
 
-      // Push updated state (with archive) to cloud after a delay
-      // so all localStorage writes from resetStreak/clearCheckins are done
-      setTimeout(() => syncNow(), 1500);
+      // Push updated state (with archive) to cloud
+      scheduleSync();
     }, 500);
   };
 
@@ -193,6 +205,25 @@ const Profile = () => {
     } finally {
       setIsInstalling(false);
     }
+  };
+
+  const handleExportData = () => {
+    const state = gatherLocalState();
+    const json = JSON.stringify(state, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `rebirth-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast({ title: 'Export Complete', description: 'Your data has been downloaded as JSON.' });
+  };
+
+  const handleRestoreFromCloud = async () => {
+    await restoreNow();
   };
 
   return (
@@ -494,9 +525,10 @@ const Profile = () => {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center space-x-3">
                 <Cloud className="w-5 h-5 text-primary" />
-                <h3 className="text-lg font-semibold text-foreground">Cloud Backup</h3>
+                <h3 className="text-lg font-semibold text-foreground">Cloud Sync</h3>
               </div>
               {syncStatus === 'synced' && <CheckCircle className="w-4 h-4 text-emerald-500" />}
+              {syncStatus === 'pending' && <AlertCircle className="w-4 h-4 text-amber-500" />}
               {syncStatus === 'failed' && <CloudOff className="w-4 h-4 text-red-500" />}
               {syncStatus === 'disabled' && <CloudOff className="w-4 h-4 text-muted-foreground" />}
             </div>
@@ -507,35 +539,61 @@ const Profile = () => {
               )}
               {syncStatus === 'synced' && lastSyncedAt && (
                 <p className="text-sm text-emerald-600">
-                  ✅ Synced {new Date(lastSyncedAt).toLocaleString()}
+                  ✅ Synced {getRelativeTime(lastSyncedAt)}
                 </p>
               )}
               {syncStatus === 'syncing' && (
-                <p className="text-sm text-primary">⏳ Syncing...</p>
+                <p className="text-sm text-primary">🔄 Syncing...</p>
+              )}
+              {syncStatus === 'pending' && (
+                <p className="text-sm text-amber-600">⚠️ Pending Changes</p>
               )}
               {syncStatus === 'failed' && (
-                <p className="text-sm text-red-500">❌ Sync failed. Your data is safe locally.</p>
+                <p className="text-sm text-red-500">❌ Sync Failed</p>
               )}
               {syncStatus === 'idle' && !lastSyncedAt && (
                 <p className="text-sm text-muted-foreground">Not synced yet.</p>
               )}
               {syncStatus === 'idle' && lastSyncedAt && (
                 <p className="text-sm text-muted-foreground">
-                  Last synced: {new Date(lastSyncedAt).toLocaleString()}
+                  Last synced: {getRelativeTime(lastSyncedAt)}
                 </p>
               )}
             </div>
 
             {syncStatus !== 'disabled' && (
-              <Button
-                onClick={syncNow}
-                disabled={isSyncing}
-                variant="outline"
-                className="w-full"
-              >
-                <RefreshCw className={`w-4 h-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
-                {isSyncing ? 'Syncing...' : 'Sync Now'}
-              </Button>
+              <div className="space-y-2">
+                <Button
+                  onClick={syncNow}
+                  disabled={isSyncing}
+                  variant="outline"
+                  className="w-full"
+                >
+                  <RefreshCw className={`w-4 h-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+                  {isSyncing ? 'Syncing...' : 'Sync Now'}
+                </Button>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    onClick={handleRestoreFromCloud}
+                    disabled={isSyncing}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                  >
+                    <CloudDownload className="w-3.5 h-3.5 mr-1.5" />
+                    Restore From Cloud
+                  </Button>
+                  <Button
+                    onClick={handleExportData}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                  >
+                    <FileDown className="w-3.5 h-3.5 mr-1.5" />
+                    Export Data
+                  </Button>
+                </div>
+              </div>
             )}
           </div>
 
