@@ -14,6 +14,7 @@ import PWAInstallBanner from "./components/PWAInstallBanner";
 import { usePWA } from "./hooks/usePWA";
 import { useGestureNavigation } from "./hooks/useGestureNavigation";
 import { useNotifications } from "./hooks/useNotifications";
+import { useMotivationalNotifications } from "./hooks/useMotivationalNotifications";
 import { CloudSyncProvider } from './hooks/useCloudSync';
 import { useEffect } from "react";
 
@@ -22,6 +23,9 @@ const queryClient = new QueryClient();
 const AppContent = () => {
   const { isOnline } = usePWA();
   const { requestPermission } = useNotifications();
+  
+  // Initialize motivational notifications
+  useMotivationalNotifications();
   
   // Initialize gesture navigation
   useGestureNavigation({

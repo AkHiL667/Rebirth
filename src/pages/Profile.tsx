@@ -5,11 +5,14 @@ import { useCustomStats } from '@/hooks/useCustomStats';
 import { useDailyCheckin } from '@/hooks/useDailyCheckin';
 import { usePWA } from '@/hooks/usePWA';
 import { useToast } from '@/hooks/use-toast';
-import { User, RotateCcw, AlertTriangle, Edit2, Calendar, Check, Settings, Download, Smartphone, CheckCircle, Cloud, RefreshCw, CloudOff, AlertCircle, CloudDownload, FileDown } from 'lucide-react';
+import { User, RotateCcw, AlertTriangle, Edit2, Calendar, Check, Settings, Download, Smartphone, CheckCircle, Cloud, RefreshCw, CloudOff, AlertCircle, CloudDownload, FileDown, Bell, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import NotificationSettings from '@/components/NotificationSettings';
+import { useMotivationalNotifications } from '@/hooks/useMotivationalNotifications';
 import { useCloudSync } from '@/hooks/useCloudSync';
 import { gatherLocalState } from '@/services/cloudSync';
 
@@ -32,6 +35,7 @@ const Profile = () => {
   const { isInstallable, isInstalled, installApp } = usePWA();
   const { toast } = useToast();
   const { isSyncing, lastSyncedAt, syncStatus, syncPending, syncNow, restoreNow, scheduleSync } = useCloudSync();
+  const { enabled: motivationalEnabled, intervalHours, toggle: toggleMotivational, changeInterval } = useMotivationalNotifications();
   const [isResetting, setIsResetting] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingQuitDate, setIsEditingQuitDate] = useState(false);
@@ -466,6 +470,51 @@ const Profile = () => {
           {/* Notification Settings */}
           <div className="p-6 bg-card rounded-2xl shadow-soft border border-border/50 mb-6">
             <NotificationSettings />
+          </div>
+
+          {/* Motivational Notifications */}
+          <div className="p-6 bg-card rounded-2xl shadow-soft border border-border/50 mb-6">
+            <div className="flex items-center space-x-2 mb-4">
+              <Bell className="w-5 h-5 text-primary" />
+              <h3 className="text-lg font-semibold text-foreground">Motivational Notifications</h3>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <p className="text-sm font-medium text-foreground">Enable Notifications</p>
+                  <p className="text-xs text-muted-foreground">Receive motivational messages throughout the day</p>
+                </div>
+                <Switch
+                  checked={motivationalEnabled}
+                  onCheckedChange={toggleMotivational}
+                />
+              </div>
+
+              {motivationalEnabled && (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Clock className="w-4 h-4 text-muted-foreground" />
+                    <p className="text-sm font-medium text-foreground">Interval</p>
+                  </div>
+                  <Select
+                    value={String(intervalHours)}
+                    onValueChange={(v) => changeInterval(parseInt(v, 10))}
+                  >
+                    <SelectTrigger className="w-[120px] h-8 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1 hour</SelectItem>
+                      <SelectItem value="3">3 hours</SelectItem>
+                      <SelectItem value="5">5 hours</SelectItem>
+                      <SelectItem value="8">8 hours</SelectItem>
+                      <SelectItem value="12">12 hours</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Download App Section */}
