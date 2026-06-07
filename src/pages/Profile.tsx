@@ -31,7 +31,7 @@ function getRelativeTime(isoString: string): string {
 const Profile = () => {
   const { streakData, resetStreak, setCustomQuitDate } = useStreakTimer();
   const { userName, updateUserName } = useUserName();
-  const { customStats, updateCigarettesPerDay, updateCostPerCigarette, updateBothStats, getCigarettesAvoided, getMoneySaved } = useCustomStats();
+  const { customStats, updateCostPerCigarette } = useCustomStats();
   const { isInstallable, isInstalled, installApp } = usePWA();
   const { toast } = useToast();
   const { isSyncing, lastSyncedAt, syncStatus, syncPending, syncNow, restoreNow, scheduleSync } = useCloudSync();
@@ -43,7 +43,6 @@ const Profile = () => {
   const [isInstalling, setIsInstalling] = useState(false);
   const [tempName, setTempName] = useState('');
   const [tempQuitDate, setTempQuitDate] = useState('');
-  const [tempCigarettesPerDay, setTempCigarettesPerDay] = useState('');
   const [tempCostPerCigarette, setTempCostPerCigarette] = useState('');
   const [dateError, setDateError] = useState('');
   const [statsError, setStatsError] = useState('');
@@ -148,8 +147,17 @@ const Profile = () => {
     setIsEditingQuitDate(false);
   };
 
+  // ─── Total cravings from score history ─────────────
+  const totalCravings = (() => {
+    try {
+      const raw = localStorage.getItem('rebirth_daily_scores');
+      if (!raw) return 0;
+      const history: Record<string, { cravings?: number }> = JSON.parse(raw);
+      return Object.values(history).reduce((sum, d) => sum + (d.cravings || 0), 0);
+    } catch { return 0; }
+  })();
+
   const handleStatsEdit = () => {
-    setTempCigarettesPerDay(customStats.customCigarettesPerDay.toString());
     setTempCostPerCigarette(customStats.costPerCigarette.toString());
     setStatsError('');
     setIsEditingStats(true);
@@ -157,28 +165,21 @@ const Profile = () => {
 
   const handleStatsSave = () => {
     try {
-      const cigarettesPerDay = parseInt(tempCigarettesPerDay) || 10;
       const costPerCigarette = parseInt(tempCostPerCigarette) || 15;
 
-      console.log('Saving stats:', { cigarettesPerDay, costPerCigarette });
-
-      if (cigarettesPerDay < 0 || costPerCigarette < 0) {
-        throw new Error('Values cannot be negative');
+      if (costPerCigarette < 0) {
+        throw new Error('Value cannot be negative');
       }
 
-      // Update both values at once to avoid state race conditions
-      updateBothStats(cigarettesPerDay, costPerCigarette);
+      updateCostPerCigarette(costPerCigarette);
       setStatsError('');
       setIsEditingStats(false);
-      
-      console.log('Stats saved successfully');
     } catch (error) {
-      setStatsError(error instanceof Error ? error.message : 'Invalid values');
+      setStatsError(error instanceof Error ? error.message : 'Invalid value');
     }
   };
 
   const handleStatsCancel = () => {
-    setTempCigarettesPerDay('');
     setTempCostPerCigarette('');
     setStatsError('');
     setIsEditingStats(false);
@@ -371,15 +372,15 @@ const Profile = () => {
             </div>
             <div className="space-y-3">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Cigarettes avoided</span>
+                <span className="text-muted-foreground">Cravings defeated</span>
                 <span className="font-semibold text-foreground">
-                  {getCigarettesAvoided(streakData.totalDays)}
+                  {totalCravings}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Money saved (₹{customStats.costPerCigarette}/cigarette)</span>
                 <span className="font-semibold text-success">
-                  ₹{getMoneySaved(streakData.totalDays)}
+                  ₹{(totalCravings * customStats.costPerCigarette).toLocaleString()}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -399,50 +400,34 @@ const Profile = () => {
                 <h3 className="text-lg font-semibold text-foreground">Customize Your Stats</h3>
               </div>
               <p className="text-sm text-muted-foreground mb-4">
-                Set your smoking habits to calculate accurate daily savings. Values update automatically based on your streak.
+                Set the cost of one cigarette to calculate your savings from defeated cravings.
               </p>
               
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-2 block">
-                      Cigarettes per Day
-                    </label>
-                    <Input
-                      type="number"
-                      value={tempCigarettesPerDay}
-                      onChange={(e) => setTempCigarettesPerDay(e.target.value)}
-                      placeholder="10"
-                      min="0"
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      How many cigarettes you used to smoke daily
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-2 block">
-                      Cost per Cigarette (₹)
-                    </label>
-                    <Input
-                      type="number"
-                      value={tempCostPerCigarette}
-                      onChange={(e) => setTempCostPerCigarette(e.target.value)}
-                      placeholder="15"
-                      min="0"
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Cost of one cigarette
-                    </p>
-                  </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-2 block">
+                    Cost per Cigarette (₹)
+                  </label>
+                  <Input
+                    type="number"
+                    value={tempCostPerCigarette}
+                    onChange={(e) => setTempCostPerCigarette(e.target.value)}
+                    placeholder="15"
+                    min="0"
+                    className="max-w-[160px]"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Cost of one cigarette
+                  </p>
                 </div>
 
                 <div className="p-4 bg-muted/30 rounded-lg">
-                  <h4 className="text-sm font-semibold text-foreground mb-2">Daily Calculation</h4>
+                  <h4 className="text-sm font-semibold text-foreground mb-2">Savings</h4>
                   <p className="text-xs text-muted-foreground">
-                    Cigarettes avoided: <span className="font-semibold">{tempCigarettesPerDay || customStats.customCigarettesPerDay}</span> per day
+                    Cravings defeated: <span className="font-semibold">{totalCravings}</span>
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Money saved: <span className="font-semibold">₹{(parseInt(tempCigarettesPerDay) || customStats.customCigarettesPerDay) * (parseInt(tempCostPerCigarette) || customStats.costPerCigarette)}</span> per day
+                    Money saved: <span className="font-semibold">₹{(totalCravings * (parseInt(tempCostPerCigarette) || customStats.costPerCigarette)).toLocaleString()}</span>
                   </p>
                 </div>
 

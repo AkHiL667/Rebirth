@@ -227,7 +227,7 @@ const Score = () => {
   const missionsDone = missions.filter(m => m.done).length;
 
   // ─── Recovery Stats ───────────────────────────────────
-  const cigsAvoided = daysOnJourney * customStats.customCigarettesPerDay;
+  const cigsAvoided = totals.cravings;
   const moneySaved = cigsAvoided * customStats.costPerCigarette;
   const hoursReclaimed = Math.round(cigsAvoided * 5 / 60);
 
@@ -373,13 +373,13 @@ const Score = () => {
               <button onClick={() => dec('cravings')} className="w-8 h-8 rounded-full bg-muted/30 flex items-center justify-center active:scale-90 transition-transform">
                 <Minus className="w-3.5 h-3.5 text-muted-foreground" />
               </button>
-              <span className="text-3xl font-bold text-emerald-500 font-display">{todayScore.cravings}</span>
+              <span className="text-3xl font-bold text-emerald-500 font-display">{totals.cravings}</span>
               <button onClick={() => inc('cravings')} className="w-8 h-8 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/25 flex items-center justify-center active:scale-90 transition-transform">
                 <Plus className="w-3.5 h-3.5 text-white" />
               </button>
             </div>
             <div className="text-center text-[11px] font-medium text-emerald-500">
-              +{todayScore.cravings * XP.CRAVING} XP
+              +{todayScore.cravings * XP.CRAVING} XP today
             </div>
           </div>
 
@@ -398,13 +398,13 @@ const Score = () => {
               <button onClick={() => dec('smoked')} className="w-8 h-8 rounded-full bg-muted/30 flex items-center justify-center active:scale-90 transition-transform">
                 <Minus className="w-3.5 h-3.5 text-muted-foreground" />
               </button>
-              <span className="text-3xl font-bold text-red-500 font-display">{todayScore.smoked}</span>
+              <span className="text-3xl font-bold text-red-500 font-display">{totals.smoked}</span>
               <button onClick={() => inc('smoked')} className="w-8 h-8 rounded-full bg-red-500 shadow-lg shadow-red-500/25 flex items-center justify-center active:scale-90 transition-transform">
                 <Plus className="w-3.5 h-3.5 text-white" />
               </button>
             </div>
             <div className="text-center text-[11px] font-medium text-red-500">
-              -{todayScore.smoked * Math.abs(XP.SMOKED)} XP
+              -{todayScore.smoked * Math.abs(XP.SMOKED)} XP today
             </div>
           </div>
         </div>
@@ -425,7 +425,7 @@ const Score = () => {
               <button onClick={() => dec('gym')} className="w-9 h-9 rounded-full bg-muted/40 flex items-center justify-center active:scale-90 transition-transform">
                 <Minus className="w-4 h-4 text-muted-foreground" />
               </button>
-              <span className="text-2xl font-bold text-blue-500 font-display min-w-[2.5ch] text-center">{todayScore.gym}</span>
+              <span className="text-2xl font-bold text-blue-500 font-display min-w-[2.5ch] text-center">{totals.gym}</span>
               <button onClick={() => inc('gym')} className="w-9 h-9 rounded-full bg-blue-500 shadow-lg shadow-blue-500/25 flex items-center justify-center active:scale-90 transition-transform">
                 <Plus className="w-4 h-4 text-white" />
               </button>
@@ -433,7 +433,7 @@ const Score = () => {
           </div>
           <div className="mt-3 pt-3 border-t border-white/10 flex justify-between text-[11px] text-muted-foreground">
             <span className="text-blue-400">+{todayScore.gym * XP.GYM} XP today</span>
-            <span>{totals.gym} lifetime sessions</span>
+            <span>{todayScore.gym} today</span>
           </div>
         </div>
 
