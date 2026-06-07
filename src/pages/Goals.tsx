@@ -21,7 +21,7 @@ const XP = {
   GYM: 20,
   CRAVING: 3,
   CHECKIN: 10,
-  SMOKED: -40,
+  SMOKED: -10,
 } as const;
 
 // ─── Rank System ────────────────────────────────────────────

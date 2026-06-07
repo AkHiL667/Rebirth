@@ -25,7 +25,7 @@ const RANK_XP_STARTS = [
   49000,49200,49400,49600,49800,50000,
 ];
 
-const XP_CFG = { SMOKE_FREE: 40, GYM: 20, CRAVING: 3, CHECKIN: 10, SMOKED: 40 };
+const XP_CFG = { SMOKE_FREE: 40, GYM: 20, CRAVING: 3, CHECKIN: 10, SMOKED: 10 };
 
 function getRank(xp: number, days: number) {
   const ranks: { name: string; division: string; tierIdx: number; xpStart: number; color: string; badge: string }[] = [];
