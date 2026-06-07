@@ -5,29 +5,31 @@ import { useCustomStats } from '@/hooks/useCustomStats';
 import { useDailyCheckin } from '@/hooks/useDailyCheckin';
 
 // ─── Rank system (mirror of Goals.tsx) ──────────────────────
+const SEASON_DAYS = 90;
+
 const TIERS = [
-  { name: 'Bronze',        color: '#CD7F32', badge: '🥉', minDays: 0 },
-  { name: 'Silver',        color: '#A8A8A8', badge: '🥈', minDays: 10 },
-  { name: 'Gold',          color: '#DAA520', badge: '🥇', minDays: 30 },
-  { name: 'Platinum',      color: '#4FC3F7', badge: '💎', minDays: 60 },
-  { name: 'Diamond',       color: '#00E5FF', badge: '💠', minDays: 100 },
-  { name: 'Crown',         color: '#CE93D8', badge: '👑', minDays: 180 },
-  { name: 'Ace',           color: '#34D399', badge: '🃏', minDays: 365 },
-  { name: 'Ace Dominator', color: '#F87171', badge: '🔥', minDays: 450 },
-  { name: 'Ace Master',    color: '#FDE68A', badge: '⚔️', minDays: 540 },
+  { name: 'Bronze',        color: '#CD7F32', badge: '🥉' },
+  { name: 'Silver',        color: '#A8A8A8', badge: '🥈' },
+  { name: 'Gold',          color: '#DAA520', badge: '🥇' },
+  { name: 'Platinum',      color: '#4FC3F7', badge: '💎' },
+  { name: 'Diamond',       color: '#00E5FF', badge: '💠' },
+  { name: 'Crown',         color: '#CE93D8', badge: '👑' },
+  { name: 'Ace',           color: '#34D399', badge: '🃏' },
+  { name: 'Ace Dominator', color: '#F87171', badge: '🔥' },
+  { name: 'Ace Master',    color: '#FDE68A', badge: '⚔️' },
 ];
 const DIVISIONS = ['V', 'IV', 'III', 'II', 'I'] as const;
 const RANK_XP_STARTS = [
-  0,500,1000,1500,2000,2500,3100,3700,4500,5500,
-  7000,8000,9200,10500,12000,14000,15500,17000,19000,21000,
-  23000,25000,27000,29000,31000,34000,35500,37000,38500,40000,
-  42000,43000,44000,45000,46000,46500,47000,47500,48000,48500,
-  49000,49200,49400,49600,49800,50000,
+  0,30,60,90,120,150,230,310,390,470,
+  550,660,770,890,1000,1100,1250,1400,1550,1700,
+  1800,1970,2140,2320,2500,2650,2840,3030,3220,3420,
+  3600,3760,3920,4080,4240,4400,4520,4640,4760,4880,
+  5000,5100,5200,5300,5400,5500,
 ];
 
-const XP_CFG = { SMOKE_FREE: 40, GYM: 20, CRAVING: 3, CHECKIN: 10, SMOKED: 10 };
+const XP_CFG = { CHECKIN: 30, GYM: 40, CRAVING: 10, SMOKED: 10 };
 
-function getRank(xp: number, days: number) {
+function getRank(xp: number) {
   const ranks: { name: string; division: string; tierIdx: number; xpStart: number; color: string; badge: string }[] = [];
   for (let t = 0; t < TIERS.length; t++) {
     for (let d = 0; d < 5; d++) {
@@ -41,14 +43,35 @@ function getRank(xp: number, days: number) {
       });
     }
   }
-  ranks.push({ name: 'Conqueror', division: '', tierIdx: -1, xpStart: 50000, color: '#FFD700', badge: '🏆' });
+  ranks.push({ name: 'Conqueror', division: '', tierIdx: -1, xpStart: 5500, color: '#FFD700', badge: '🏆' });
 
   const clamped = Math.max(0, xp);
-  const rank = [...ranks].reverse().find(r => clamped >= r.xpStart && days >= (r.tierIdx >= 0 ? TIERS[r.tierIdx].minDays : 730)) || ranks[0];
+  const rank = [...ranks].reverse().find(r => clamped >= r.xpStart) || ranks[0];
   return rank;
 }
 
-function getTotalsFromStorage() {
+function getSeasonTotalsFromStorage(quitDate: Date) {
+  try {
+    const raw = localStorage.getItem('rebirth_daily_scores');
+    if (!raw) return { gym: 0, cravings: 0, smoked: 0 };
+    const history: Record<string, { gym?: number; cravings?: number; smoked?: number }> = JSON.parse(raw);
+    const daysOnJourney = Math.max(0, Math.floor((Date.now() - quitDate.getTime()) / 86400000));
+    const currentSeason = Math.floor(daysOnJourney / SEASON_DAYS) + 1;
+    const startMs = quitDate.getTime() + (currentSeason - 1) * SEASON_DAYS * 86400000;
+    const endMs = quitDate.getTime() + currentSeason * SEASON_DAYS * 86400000;
+    const startStr = new Date(startMs).toISOString().split('T')[0];
+    const endStr = new Date(endMs - 1).toISOString().split('T')[0];
+
+    return Object.entries(history)
+      .filter(([date]) => date >= startStr && date <= endStr)
+      .reduce(
+        (a, [, d]) => ({ gym: a.gym + (d.gym || 0), cravings: a.cravings + (d.cravings || 0), smoked: a.smoked + (d.smoked || 0) }),
+        { gym: 0, cravings: 0, smoked: 0 }
+      );
+  } catch { return { gym: 0, cravings: 0, smoked: 0 }; }
+}
+
+function getLifetimeTotalsFromStorage() {
   try {
     const raw = localStorage.getItem('rebirth_daily_scores');
     if (!raw) return { gym: 0, cravings: 0, smoked: 0 };
@@ -66,7 +89,7 @@ function drawSnapshot(
   days: number,
   hours: number,
   minutes: number,
-  totalXP: number,
+  seasonXP: number,
   rankLabel: string,
   rankBadge: string,
   rankColor: string,
@@ -74,6 +97,8 @@ function drawSnapshot(
   moneySaved: number,
   gymSessions: number,
   quitDate: string,
+  season: number,
+  dayInSeason: number,
 ) {
   const W = 1080;
   const H = 1350;
@@ -118,6 +143,11 @@ function drawSnapshot(
   ctx.font = '22px system-ui, sans-serif';
   ctx.fillText(userName ? `${userName}'s Journey` : 'My Journey', W / 2, 120);
 
+  // Season badge
+  ctx.fillStyle = '#fb923c';
+  ctx.font = 'bold 24px system-ui, sans-serif';
+  ctx.fillText(`🔥 Season ${season} • Day ${dayInSeason + 1}/${SEASON_DAYS}`, W / 2, 160);
+
   // ── Rank Badge (large centered) ──
   ctx.font = '100px system-ui, sans-serif';
   ctx.fillText(rankBadge, W / 2, 260);
@@ -128,7 +158,7 @@ function drawSnapshot(
 
   ctx.fillStyle = 'rgba(255,255,255,0.5)';
   ctx.font = '24px system-ui, sans-serif';
-  ctx.fillText(`${totalXP.toLocaleString()} XP`, W / 2, 370);
+  ctx.fillText(`${seasonXP.toLocaleString()} XP`, W / 2, 370);
 
   // ── Streak Display ──
   const streakY = 470;
@@ -241,22 +271,33 @@ export function useProgressSnapshot() {
   const { checkins } = useDailyCheckin();
 
   const generateSnapshot = useCallback(() => {
-    const totals = getTotalsFromStorage();
+    const seasonTotals = getSeasonTotalsFromStorage(streakData.quitDate);
+    const lifetimeTotals = getLifetimeTotalsFromStorage();
     const daysOnJourney = Math.max(0, Math.floor(
-      (Date.now() - streakData.quitDate.getTime()) / (1000 * 60 * 60 * 24)
+      (Date.now() - streakData.quitDate.getTime()) / 86400000
     ));
 
-    // Calculate XP
-    const smokeFreeXP = daysOnJourney * XP_CFG.SMOKE_FREE;
-    const gymXP = totals.gym * XP_CFG.GYM;
-    const cravingXP = totals.cravings * XP_CFG.CRAVING;
-    const checkinXP = checkins.filter(c => c.checkedIn).length * XP_CFG.CHECKIN;
-    const smokedPenalty = totals.smoked * XP_CFG.SMOKED;
-    const totalXP = Math.max(0, smokeFreeXP + gymXP + cravingXP + checkinXP - smokedPenalty);
+    // Season info
+    const currentSeason = Math.floor(daysOnJourney / SEASON_DAYS) + 1;
+    const dayInSeason = daysOnJourney % SEASON_DAYS;
 
-    const rank = getRank(totalXP, daysOnJourney);
+    // Season-filtered checkins
+    const startMs = streakData.quitDate.getTime() + (currentSeason - 1) * SEASON_DAYS * 86400000;
+    const endMs = streakData.quitDate.getTime() + currentSeason * SEASON_DAYS * 86400000;
+    const startStr = new Date(startMs).toISOString().split('T')[0];
+    const endStr = new Date(endMs - 1).toISOString().split('T')[0];
+    const seasonCheckinCount = checkins.filter(c => c.checkedIn && c.date >= startStr && c.date <= endStr).length;
+
+    // Calculate season XP
+    const checkinXP = seasonCheckinCount * XP_CFG.CHECKIN;
+    const gymXP = seasonTotals.gym * XP_CFG.GYM;
+    const cravingXP = seasonTotals.cravings * XP_CFG.CRAVING;
+    const smokedPenalty = seasonTotals.smoked * XP_CFG.SMOKED;
+    const seasonXP = Math.max(0, checkinXP + gymXP + cravingXP - smokedPenalty);
+
+    const rank = getRank(seasonXP);
     const rankLabel = rank.division ? `${rank.name} ${rank.division}` : rank.name;
-    const moneySaved = totals.cravings * customStats.costPerCigarette;
+    const moneySaved = lifetimeTotals.cravings * customStats.costPerCigarette;
 
     const quitDateStr = streakData.quitDate.toLocaleDateString('en-US', {
       month: 'long', day: 'numeric', year: 'numeric',
@@ -267,14 +308,16 @@ export function useProgressSnapshot() {
       streakData.days,
       streakData.hours,
       streakData.minutes,
-      totalXP,
+      seasonXP,
       rankLabel,
       rank.badge,
       rank.color,
-      totals.cravings,
+      lifetimeTotals.cravings,
       moneySaved,
-      totals.gym,
+      lifetimeTotals.gym,
       quitDateStr,
+      currentSeason,
+      dayInSeason,
     );
 
     // Try Web Share API first (mobile), fallback to download

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Swords, Plus, Minus, Check, Dumbbell, Shield, TrendingUp, TrendingDown, Cigarette, X } from 'lucide-react';
+import { Swords, Plus, Minus, Check, Dumbbell, Shield, TrendingUp, TrendingDown, Cigarette, X, Flame } from 'lucide-react';
 import { useStreakTimer } from '@/hooks/useStreakTimer';
 import { useDailyCheckin } from '@/hooks/useDailyCheckin';
 import { useCustomStats } from '@/hooks/useCustomStats';
@@ -15,110 +15,90 @@ interface DailyScore {
 }
 type ScoreHistory = Record<string, DailyScore>;
 
+// ─── Season Config ──────────────────────────────────────────
+const SEASON_DAYS = 90;
+
 // ─── XP Config ──────────────────────────────────────────────
 const XP = {
-  SMOKE_FREE: 40,
-  GYM: 20,
-  CRAVING: 3,
-  CHECKIN: 10,
+  CHECKIN: 30,
+  GYM: 40,
+  CRAVING: 10,
   SMOKED: -10,
 } as const;
 
-// ─── Rank System ────────────────────────────────────────────
+// ─── Rank System (season-based, no day requirements) ────────
 interface RankTier {
   name: string;
-  color: string;       // gradient from
-  colorTo: string;     // gradient to
+  color: string;
+  colorTo: string;
   textColor: string;
   badge: string;
-  minDays: number;     // smoke-free days required for this tier
 }
 
 const TIERS: RankTier[] = [
-  { name: 'Bronze',         color: '#CD7F32', colorTo: '#A0522D', textColor: '#CD7F32', badge: '🥉', minDays: 0   },
-  { name: 'Silver',         color: '#C0C0C0', colorTo: '#808080', textColor: '#A8A8A8', badge: '🥈', minDays: 10  },
-  { name: 'Gold',           color: '#FFD700', colorTo: '#DAA520', textColor: '#DAA520', badge: '🥇', minDays: 30  },
-  { name: 'Platinum',       color: '#4FC3F7', colorTo: '#0288D1', textColor: '#4FC3F7', badge: '💎', minDays: 60  },
-  { name: 'Diamond',        color: '#00E5FF', colorTo: '#00B8D4', textColor: '#00E5FF', badge: '💠', minDays: 100 },
-  { name: 'Crown',          color: '#9C27B0', colorTo: '#6A1B9A', textColor: '#CE93D8', badge: '👑', minDays: 180 },
-  { name: 'Ace',            color: '#10B981', colorTo: '#059669', textColor: '#34D399', badge: '🃏', minDays: 365 },
-  { name: 'Ace Dominator',  color: '#EF4444', colorTo: '#B91C1C', textColor: '#F87171', badge: '🔥', minDays: 450 },
-  { name: 'Ace Master',     color: '#1C1917', colorTo: '#DAA520', textColor: '#FDE68A', badge: '⚔️', minDays: 540 },
+  { name: 'Bronze',         color: '#CD7F32', colorTo: '#A0522D', textColor: '#CD7F32', badge: '🥉' },
+  { name: 'Silver',         color: '#C0C0C0', colorTo: '#808080', textColor: '#A8A8A8', badge: '🥈' },
+  { name: 'Gold',           color: '#FFD700', colorTo: '#DAA520', textColor: '#DAA520', badge: '🥇' },
+  { name: 'Platinum',       color: '#4FC3F7', colorTo: '#0288D1', textColor: '#4FC3F7', badge: '💎' },
+  { name: 'Diamond',        color: '#00E5FF', colorTo: '#00B8D4', textColor: '#00E5FF', badge: '💠' },
+  { name: 'Crown',          color: '#9C27B0', colorTo: '#6A1B9A', textColor: '#CE93D8', badge: '👑' },
+  { name: 'Ace',            color: '#10B981', colorTo: '#059669', textColor: '#34D399', badge: '🃏' },
+  { name: 'Ace Dominator',  color: '#EF4444', colorTo: '#B91C1C', textColor: '#F87171', badge: '🔥' },
+  { name: 'Ace Master',     color: '#1C1917', colorTo: '#DAA520', textColor: '#FDE68A', badge: '⚔️' },
 ];
 
 const DIVISIONS = ['V', 'IV', 'III', 'II', 'I'] as const;
 
-// Hand-crafted XP thresholds per division start
-// Bronze V=0, I=2000 | Silver V=2500, I=5500 | Gold V=7000, I=12000
-// Platinum V=14000, I=21000 | Diamond V=23000, I=31000 | Crown V=34000, I=40000
-// Ace V=42000, I=46000 | AceDom V=46500, I=48500 | AceMaster V=49000, I=49800
-// Conqueror = 50000
+// XP thresholds — upscaling: lower tiers cheap, higher tiers expensive
+// Balanced so an average player (check-in daily, gym 4×/week, 1 craving/day, 1 smoke/week)
+// earns ~5550 XP over 90 days and barely reaches Conqueror
 const RANK_XP_STARTS = [
-  // Bronze V–I
-  0, 500, 1000, 1500, 2000,
-  // Silver V–I
-  2500, 3100, 3700, 4500, 5500,
-  // Gold V–I
-  7000, 8000, 9200, 10500, 12000,
-  // Platinum V–I
-  14000, 15500, 17000, 19000, 21000,
-  // Diamond V–I
-  23000, 25000, 27000, 29000, 31000,
-  // Crown V–I
-  34000, 35500, 37000, 38500, 40000,
-  // Ace V–I
-  42000, 43000, 44000, 45000, 46000,
-  // Ace Dominator V–I
-  46500, 47000, 47500, 48000, 48500,
-  // Ace Master V–I
-  49000, 49200, 49400, 49600, 49800,
+  // Bronze V–I (tier spans 150 XP)
+  0, 30, 60, 90, 120,
+  // Silver V–I (tier spans 320 XP)
+  150, 230, 310, 390, 470,
+  // Gold V–I (tier spans 450 XP)
+  550, 660, 770, 890, 1000,
+  // Platinum V–I (tier spans 600 XP)
+  1100, 1250, 1400, 1550, 1700,
+  // Diamond V–I (tier spans 700 XP)
+  1800, 1970, 2140, 2320, 2500,
+  // Crown V–I (tier spans 770 XP)
+  2650, 2840, 3030, 3220, 3420,
+  // Ace V–I (tier spans 640 XP)
+  3600, 3760, 3920, 4080, 4240,
+  // Ace Dominator V–I (tier spans 480 XP)
+  4400, 4520, 4640, 4760, 4880,
+  // Ace Master V–I (tier spans 400 XP)
+  5000, 5100, 5200, 5300, 5400,
   // Conqueror
-  50000,
+  5500,
 ];
 
-// Build rank table from explicit thresholds
 function buildRankTable() {
-  const ranks: { name: string; division: string; xpStart: number; xpEnd: number; tierIdx: number; minDays: number }[] = [];
+  const ranks: { name: string; division: string; xpStart: number; xpEnd: number; tierIdx: number }[] = [];
   for (let t = 0; t < TIERS.length; t++) {
     for (let d = 0; d < 5; d++) {
       const flatIdx = t * 5 + d;
       const xpStart = RANK_XP_STARTS[flatIdx];
       const xpEnd = RANK_XP_STARTS[flatIdx + 1];
-      ranks.push({
-        name: TIERS[t].name,
-        division: DIVISIONS[d],
-        xpStart,
-        xpEnd,
-        tierIdx: t,
-        minDays: TIERS[t].minDays,
-      });
+      ranks.push({ name: TIERS[t].name, division: DIVISIONS[d], xpStart, xpEnd, tierIdx: t });
     }
   }
-  // Conqueror
-  ranks.push({ name: 'Conqueror', division: '', xpStart: 50000, xpEnd: Infinity, tierIdx: -1, minDays: 730 });
+  ranks.push({ name: 'Conqueror', division: '', xpStart: 5500, xpEnd: Infinity, tierIdx: -1 });
   return ranks;
 }
 const RANK_TABLE = buildRankTable();
 
-function getRankInfo(xp: number, days: number) {
+function getRankInfo(xp: number) {
   const clamped = Math.max(0, xp);
-  // Find highest rank where user meets BOTH xp AND day requirements
-  const rank = [...RANK_TABLE].reverse().find(r => clamped >= r.xpStart && days >= r.minDays) || RANK_TABLE[0];
+  const rank = [...RANK_TABLE].reverse().find(r => clamped >= r.xpStart) || RANK_TABLE[0];
   const idx = RANK_TABLE.indexOf(rank);
   const nextRank = idx < RANK_TABLE.length - 1 ? RANK_TABLE[idx + 1] : null;
   const xpInRank = clamped - rank.xpStart;
   const xpNeeded = rank.xpEnd === Infinity ? 1 : rank.xpEnd - rank.xpStart;
   const pct = rank.xpEnd === Infinity ? 100 : Math.min((xpInRank / xpNeeded) * 100, 100);
-  // Check what's blocking next rank
-  let blockedBy: 'none' | 'xp' | 'days' | 'both' = 'none';
-  if (nextRank) {
-    const needsXP = clamped < nextRank.xpStart;
-    const needsDays = days < nextRank.minDays;
-    if (needsXP && needsDays) blockedBy = 'both';
-    else if (needsXP) blockedBy = 'xp';
-    else if (needsDays) blockedBy = 'days';
-  }
-  return { rank, idx, nextRank, xpInRank, xpNeeded, pct, blockedBy };
+  return { rank, idx, nextRank, xpInRank, xpNeeded, pct };
 }
 
 // ─── Helper ─────────────────────────────────────────────────
@@ -139,6 +119,22 @@ const Score = () => {
   const daysOnJourney = Math.max(0, Math.floor(
     (Date.now() - streakData.quitDate.getTime()) / (1000 * 60 * 60 * 24)
   ));
+
+  // ─── Season Computation ───────────────────────────────
+  const currentSeason = Math.floor(daysOnJourney / SEASON_DAYS) + 1;
+  const dayInSeason = daysOnJourney % SEASON_DAYS;
+  const daysLeftInSeason = SEASON_DAYS - dayInSeason;
+  const seasonPct = (dayInSeason / SEASON_DAYS) * 100;
+
+  // Season date range
+  const seasonDates = useMemo(() => {
+    const qd = streakData.quitDate.getTime();
+    const startMs = qd + (currentSeason - 1) * SEASON_DAYS * 86400000;
+    const endMs = qd + currentSeason * SEASON_DAYS * 86400000;
+    const startStr = new Date(startMs).toISOString().split('T')[0];
+    const endStr = new Date(endMs - 1).toISOString().split('T')[0];
+    return { startStr, endStr };
+  }, [streakData.quitDate, currentSeason]);
 
   // Load history
   useEffect(() => {
@@ -165,26 +161,41 @@ const Score = () => {
     if (todayScore[key] > 0) updateToday({ ...todayScore, [key]: todayScore[key] - 1 });
   };
 
-  // ─── Totals ───────────────────────────────────────────
+  // ─── Lifetime Totals (for counters) ───────────────────
   const totals = useMemo(() =>
     Object.values(history).reduce(
       (a, d) => ({ gym: a.gym + d.gym, cravings: a.cravings + (d.cravings || 0), smoked: a.smoked + (d.smoked || 0) }),
       { gym: 0, cravings: 0, smoked: 0 }
     ), [history]);
 
-  // ─── XP Calculations ─────────────────────────────────
-  const totalXP = useMemo(() => {
-    const smokeFreeXP = daysOnJourney * XP.SMOKE_FREE;
-    const gymXP = totals.gym * XP.GYM;
-    const cravingXP = totals.cravings * XP.CRAVING;
-    const checkinXP = checkins.filter(c => c.checkedIn).length * XP.CHECKIN;
-    const smokedPenalty = totals.smoked * Math.abs(XP.SMOKED);
-    return Math.max(0, smokeFreeXP + gymXP + cravingXP + checkinXP - smokedPenalty);
-  }, [daysOnJourney, totals, checkins]);
+  // ─── Season Totals (for XP) ───────────────────────────
+  const seasonTotals = useMemo(() => {
+    const { startStr, endStr } = seasonDates;
+    return Object.entries(history)
+      .filter(([date]) => date >= startStr && date <= endStr)
+      .reduce(
+        (a, [, d]) => ({ gym: a.gym + d.gym, cravings: a.cravings + (d.cravings || 0), smoked: a.smoked + (d.smoked || 0) }),
+        { gym: 0, cravings: 0, smoked: 0 }
+      );
+  }, [history, seasonDates]);
+
+  const seasonCheckins = useMemo(() => {
+    const { startStr, endStr } = seasonDates;
+    return checkins.filter(c => c.checkedIn && c.date >= startStr && c.date <= endStr).length;
+  }, [checkins, seasonDates]);
+
+  // ─── Season XP ────────────────────────────────────────
+  const seasonXP = useMemo(() => {
+    const checkinXP = seasonCheckins * XP.CHECKIN;
+    const gymXP = seasonTotals.gym * XP.GYM;
+    const cravingXP = seasonTotals.cravings * XP.CRAVING;
+    const smokedPenalty = seasonTotals.smoked * Math.abs(XP.SMOKED);
+    return Math.max(0, checkinXP + gymXP + cravingXP - smokedPenalty);
+  }, [seasonTotals, seasonCheckins]);
 
   const todayPositiveXP = useMemo(() => {
     let xp = todayScore.gym * XP.GYM + todayScore.cravings * XP.CRAVING;
-    if (todayCheckedIn) xp += XP.CHECKIN + XP.SMOKE_FREE;
+    if (todayCheckedIn) xp += XP.CHECKIN;
     return xp;
   }, [todayCheckedIn, todayScore]);
 
@@ -194,9 +205,9 @@ const Score = () => {
 
   const todayNetXP = todayPositiveXP - todayNegativeXP;
 
-  // ─── Rank ─────────────────────────────────────────────
-  const { rank, idx: rankIdx, nextRank, xpInRank, xpNeeded, pct: rankPct, blockedBy } = useMemo(
-    () => getRankInfo(totalXP, daysOnJourney), [totalXP, daysOnJourney]
+  // ─── Rank (based on season XP only) ───────────────────
+  const { rank, idx: rankIdx, nextRank, xpInRank, xpNeeded, pct: rankPct } = useMemo(
+    () => getRankInfo(seasonXP), [seasonXP]
   );
 
   const tier = rank.tierIdx >= 0 ? TIERS[rank.tierIdx] : null;
@@ -219,7 +230,6 @@ const Score = () => {
 
   // ─── Missions ─────────────────────────────────────────
   const missions = [
-    { label: 'Stay Smoke-Free', done: todayCheckedIn, xp: XP.SMOKE_FREE },
     { label: 'Daily Check-in', done: todayCheckedIn, xp: XP.CHECKIN },
     { label: 'Gym Session', done: todayScore.gym > 0, xp: XP.GYM },
     { label: 'Defeat a Craving', done: todayScore.cravings > 0, xp: XP.CRAVING },
@@ -242,7 +252,7 @@ const Score = () => {
       const hasCheckin = checkins.some(c => c.date === ds && c.checkedIn);
       const dayData = history[ds];
       let xp = 0;
-      if (hasCheckin) xp += XP.SMOKE_FREE + XP.CHECKIN;
+      if (hasCheckin) xp += XP.CHECKIN;
       if (dayData?.gym) xp += dayData.gym * XP.GYM;
       if (dayData?.cravings) xp += dayData.cravings * XP.CRAVING;
       if (dayData?.smoked) xp -= dayData.smoked * Math.abs(XP.SMOKED);
@@ -263,7 +273,7 @@ const Score = () => {
   // ─── Rank tiers for display (scrollable) ──────────────
   const tierPreview = TIERS.map((t, i) => {
     const firstRankOfTier = RANK_TABLE.find(r => r.tierIdx === i);
-    const unlocked = firstRankOfTier ? totalXP >= firstRankOfTier.xpStart && daysOnJourney >= t.minDays : false;
+    const unlocked = firstRankOfTier ? seasonXP >= firstRankOfTier.xpStart : false;
     const isCurrent = rank.tierIdx === i;
     return { ...t, unlocked, isCurrent, idx: i };
   });
@@ -295,21 +305,26 @@ const Score = () => {
               {rank.division ? `${rank.name} ${rank.division}` : rank.name}
             </h2>
 
-            {/* Day */}
+            {/* Season Badge */}
+            <div className="inline-flex items-center gap-1.5 mb-1">
+              <Flame className="w-3.5 h-3.5 text-orange-400" />
+              <span className="text-xs font-bold text-orange-400">Season {currentSeason}</span>
+            </div>
             <p className="text-xs text-muted-foreground mb-1">
-              Day {daysOnJourney} • {daysOnJourney} Smoke-Free Days
+              Day {dayInSeason + 1} / {SEASON_DAYS} • {daysLeftInSeason} days left
             </p>
-            {rank.minDays > 0 && (
-              <p className="text-[10px] text-muted-foreground/60 mb-3">
-                Requires {rank.minDays}+ days
-              </p>
-            )}
-            {!rank.minDays && <div className="mb-3" />}
+            {/* Season progress bar */}
+            <div className="w-32 mx-auto h-1 bg-muted/15 rounded-full overflow-hidden mb-3">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-orange-400 to-orange-500 transition-all"
+                style={{ width: `${seasonPct}%` }}
+              />
+            </div>
 
             {/* XP Display */}
             <div className="inline-flex items-center gap-1.5 mb-3">
               <span className="text-3xl font-bold font-display" style={{ color: badgeTextColor }}>
-                {totalXP.toLocaleString()}
+                {seasonXP.toLocaleString()}
               </span>
               <span className="text-sm text-muted-foreground">XP</span>
             </div>
@@ -330,17 +345,6 @@ const Score = () => {
                   <span>{xpInRank.toLocaleString()} / {xpNeeded.toLocaleString()} XP</span>
                   <span>Next: {nextRank?.division ? `${nextRank.name} ${nextRank.division}` : nextRank?.name}</span>
                 </div>
-                {/* Blocker indicator */}
-                {blockedBy === 'days' && nextRank && (
-                  <p className="text-[10px] text-amber-500 mt-1.5 text-center">
-                    🔒 Need {nextRank.minDays - daysOnJourney} more smoke-free days to rank up
-                  </p>
-                )}
-                {blockedBy === 'both' && nextRank && (
-                  <p className="text-[10px] text-amber-500 mt-1.5 text-center">
-                    🔒 Need more XP + {nextRank.minDays - daysOnJourney} more days
-                  </p>
-                )}
               </div>
             )}
 
@@ -443,8 +447,8 @@ const Score = () => {
           <div className="space-y-2">
             {todayCheckedIn && (
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Smoke-Free + Check-in</span>
-                <span className="text-emerald-500 font-bold">+{XP.SMOKE_FREE + XP.CHECKIN}</span>
+                <span className="text-muted-foreground">Daily Check-in</span>
+                <span className="text-emerald-500 font-bold">+{XP.CHECKIN}</span>
               </div>
             )}
             {todayScore.gym > 0 && (
@@ -512,8 +516,8 @@ const Score = () => {
               <div className="text-[11px] text-muted-foreground mt-0.5">Hours Reclaimed</div>
             </div>
             <div className="bg-primary/5 border border-primary/10 rounded-2xl p-3.5 text-center">
-              <div className="text-xl font-bold text-primary font-display">{totalXP.toLocaleString()}</div>
-              <div className="text-[11px] text-muted-foreground mt-0.5">Lifetime XP</div>
+              <div className="text-xl font-bold text-primary font-display">{seasonXP.toLocaleString()}</div>
+              <div className="text-[11px] text-muted-foreground mt-0.5">Season XP</div>
             </div>
           </div>
         </div>
@@ -580,9 +584,6 @@ const Score = () => {
                 <span className={`text-[10px] font-bold ${t.isCurrent ? 'text-foreground' : 'text-muted-foreground'}`}>
                   {t.name}
                 </span>
-                <span className={`text-[9px] ${t.unlocked ? 'text-muted-foreground' : 'text-muted-foreground/50'}`}>
-                  {t.minDays}d
-                </span>
               </div>
             ))}
             {/* Conqueror */}
@@ -596,7 +597,6 @@ const Score = () => {
                 🏆
               </div>
               <span className="text-[10px] font-bold text-muted-foreground">Conqueror</span>
-              <span className="text-[9px] text-muted-foreground/50">730d</span>
             </div>
           </div>
         </div>
