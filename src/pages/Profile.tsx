@@ -65,6 +65,7 @@ const Profile = () => {
     'rebirth_unlocked_achievements',
     'rebirth_rank_seen',
     'rebirth_expenses',
+    'rebirth_gym_log',
     'notification-settings',
   ];
 
@@ -273,7 +274,7 @@ const Profile = () => {
                 </Button>
               </div>
               <p className="text-muted-foreground">
-                {userName ? 'Smoke-free warrior' : 'Click to add your name'}
+                {userName ? "" : 'Click to add your name'}
               </p>
             </div>
           )}

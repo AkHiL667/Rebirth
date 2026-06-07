@@ -1,4 +1,4 @@
-import { Home, Trophy, Crosshair, Wallet } from 'lucide-react';
+import { Home, Trophy, Crosshair, Wallet, Dumbbell } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 const Navigation = () => {
@@ -8,6 +8,7 @@ const Navigation = () => {
     { path: '/', icon: Home, label: 'Home' },
     { path: '/achievements', icon: Trophy, label: 'Achievements' },
     { path: '/score', icon: Crosshair, label: 'Score' },
+    { path: '/gym', icon: Dumbbell, label: 'Gym' },
     { path: '/expenses', icon: Wallet, label: 'Expenses' }
   ];
 

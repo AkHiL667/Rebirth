@@ -16,6 +16,7 @@ const ALL_KEYS = [
   'rebirth_unlocked_achievements',
   'rebirth_rank_seen',
   'rebirth_expenses',
+  'rebirth_gym_log',
   'notification-settings',
 ];
 
@@ -26,6 +27,7 @@ const MEANINGFUL_KEYS = [
   'rebirth_user_goals',
   'rebirth_user_name',
   'rebirth_expenses',
+  'rebirth_gym_log',
   'rebirth_unlocked_achievements',
   'rebirth_custom_stats',
 ];
