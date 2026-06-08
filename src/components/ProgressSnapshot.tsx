@@ -96,6 +96,7 @@ function drawSnapshot(
   cravingsDefeated: number,
   moneySaved: number,
   gymSessions: number,
+  smokedTotal: number,
   quitDate: string,
   season: number,
   dayInSeason: number,
@@ -195,6 +196,7 @@ function drawSnapshot(
   const stats = [
     { label: 'Cravings\nDefeated', value: String(cravingsDefeated), color: '#10b981' },
     { label: 'Money\nSaved', value: `₹${moneySaved.toLocaleString()}`, color: '#10b981' },
+    { label: 'Setbacks', value: String(smokedTotal), color: '#ef4444' },
     { label: 'Gym\nSessions', value: String(gymSessions), color: '#3b82f6' },
     { label: 'Smoke-Free\nDays', value: String(days), color: rankColor },
   ];
@@ -202,37 +204,40 @@ function drawSnapshot(
   const cellW = 200;
   const cellH = 160;
   const gap = 40;
-  const gridW = cellW * 2 + gap;
-  const startX = (W - gridW) / 2;
 
-  stats.forEach((s, i) => {
-    const col = i % 2;
-    const row = Math.floor(i / 2);
-    const x = startX + col * (cellW + gap);
-    const y = gridY + row * (cellH + gap);
+  // Row 1: 3 items centered, Row 2: 2 items centered
+  const row1 = stats.slice(0, 3);
+  const row2 = stats.slice(3);
 
-    // Cell background
-    roundRect(ctx, x, y, cellW, cellH, 20);
-    ctx.fillStyle = 'rgba(255,255,255,0.03)';
-    ctx.fill();
-    ctx.strokeStyle = `${s.color}22`;
-    ctx.lineWidth = 1;
-    ctx.stroke();
+  const drawStatRow = (items: typeof stats, y: number) => {
+    const totalW = items.length * cellW + (items.length - 1) * gap;
+    const sx = (W - totalW) / 2;
+    items.forEach((s, i) => {
+      const x = sx + i * (cellW + gap);
 
-    // Value
-    ctx.textAlign = 'center';
-    ctx.fillStyle = s.color;
-    ctx.font = 'bold 40px system-ui, sans-serif';
-    ctx.fillText(s.value, x + cellW / 2, y + 65);
+      roundRect(ctx, x, y, cellW, cellH, 20);
+      ctx.fillStyle = 'rgba(255,255,255,0.03)';
+      ctx.fill();
+      ctx.strokeStyle = `${s.color}22`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
 
-    // Label (multiline)
-    ctx.fillStyle = 'rgba(255,255,255,0.45)';
-    ctx.font = '18px system-ui, sans-serif';
-    const lines = s.label.split('\n');
-    lines.forEach((line, li) => {
-      ctx.fillText(line, x + cellW / 2, y + 100 + li * 22);
+      ctx.textAlign = 'center';
+      ctx.fillStyle = s.color;
+      ctx.font = 'bold 40px system-ui, sans-serif';
+      ctx.fillText(s.value, x + cellW / 2, y + 65);
+
+      ctx.fillStyle = 'rgba(255,255,255,0.45)';
+      ctx.font = '18px system-ui, sans-serif';
+      const lines = s.label.split('\n');
+      lines.forEach((line, li) => {
+        ctx.fillText(line, x + cellW / 2, y + 100 + li * 22);
+      });
     });
-  });
+  };
+
+  drawStatRow(row1, gridY);
+  drawStatRow(row2, gridY + cellH + gap);
 
   // ── Footer ──
   const footY = H - 100;
@@ -315,6 +320,7 @@ export function useProgressSnapshot() {
       lifetimeTotals.cravings,
       moneySaved,
       lifetimeTotals.gym,
+      lifetimeTotals.smoked,
       quitDateStr,
       currentSeason,
       dayInSeason,
