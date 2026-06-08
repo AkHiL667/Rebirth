@@ -36,21 +36,19 @@ const generateId = () => Date.now().toString(36) + Math.random().toString(36).sl
 
 // ─── Component ──────────────────────────────────────────────
 const Expenses = () => {
-  const [store, setStore] = useState<ExpenseStore>([]);
+  const [store, setStore] = useState<ExpenseStore>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try { return JSON.parse(saved); } catch { /* ignore */ }
+    }
+    return [];
+  });
   const [expandedMonth, setExpandedMonth] = useState<string>(getCurrentMonth());
   const [newKey, setNewKey] = useState('');
   const [newAmount, setNewAmount] = useState('');
   const [editingNotes, setEditingNotes] = useState<string | null>(null);
   const [tempNotes, setTempNotes] = useState('');
   const [showLifetime, setShowLifetime] = useState(false);
-
-  // Load from localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try { setStore(JSON.parse(saved)); } catch { /* ignore */ }
-    }
-  }, []);
 
   // Save helper
   const save = (updated: ExpenseStore) => {
@@ -67,7 +65,7 @@ const Expenses = () => {
 
   // Initialize current month on mount
   useEffect(() => {
-    if (!store.find(m => m.month === currentMonth) && store.length >= 0) {
+    if (!store.find(m => m.month === currentMonth)) {
       save(ensureMonth(store, currentMonth));
     }
   }, [currentMonth]);
