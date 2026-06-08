@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Trash2, ChevronDown, ChevronUp, IndianRupee, TrendingUp, Wallet, StickyNote } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, ChevronUp, IndianRupee, TrendingUp, Wallet, StickyNote, PiggyBank } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -15,6 +15,7 @@ interface ExpenseEntry {
 interface MonthData {
   month: string; // "2026-06"
   entries: ExpenseEntry[];
+  savings: ExpenseEntry[];
   notes: string;
 }
 
@@ -46,6 +47,8 @@ const Expenses = () => {
   const [expandedMonth, setExpandedMonth] = useState<string>(getCurrentMonth());
   const [newKey, setNewKey] = useState('');
   const [newAmount, setNewAmount] = useState('');
+  const [newSavingsKey, setNewSavingsKey] = useState('');
+  const [newSavingsAmount, setNewSavingsAmount] = useState('');
   const [editingNotes, setEditingNotes] = useState<string | null>(null);
   const [tempNotes, setTempNotes] = useState('');
   const [showLifetime, setShowLifetime] = useState(false);
@@ -60,7 +63,7 @@ const Expenses = () => {
   const currentMonth = getCurrentMonth();
   const ensureMonth = (data: ExpenseStore, month: string): ExpenseStore => {
     if (data.find(m => m.month === month)) return data;
-    return [...data, { month, entries: [], notes: '' }].sort((a, b) => b.month.localeCompare(a.month));
+    return [...data, { month, entries: [], savings: [], notes: '' }].sort((a, b) => b.month.localeCompare(a.month));
   };
 
   // Initialize current month on mount
@@ -101,6 +104,32 @@ const Expenses = () => {
     save(updated);
   };
 
+  // Add savings
+  const addSavings = (month: string) => {
+    const trimmedKey = newSavingsKey.trim();
+    const amount = parseFloat(newSavingsAmount);
+    if (!trimmedKey || isNaN(amount) || amount <= 0) return;
+
+    const updated = ensureMonth(store, month).map(m =>
+      m.month === month
+        ? { ...m, savings: [...(m.savings || []), { id: generateId(), key: trimmedKey, amount }] }
+        : m
+    );
+    save(updated);
+    setNewSavingsKey('');
+    setNewSavingsAmount('');
+  };
+
+  // Remove savings
+  const removeSavings = (month: string, entryId: string) => {
+    const updated = store.map(m =>
+      m.month === month
+        ? { ...m, savings: (m.savings || []).filter(e => e.id !== entryId) }
+        : m
+    );
+    save(updated);
+  };
+
   // Save notes
   const saveNotes = (month: string) => {
     const updated = store.map(m =>
@@ -130,6 +159,16 @@ const Expenses = () => {
     return { categories: sorted, total };
   }, [store]);
 
+  // Savings totals
+  const currentSavingsTotal = useMemo(() => {
+    const md = store.find(m => m.month === currentMonth);
+    return md ? getMonthTotal(md.savings || []) : 0;
+  }, [store, currentMonth]);
+
+  const lifetimeSavingsTotal = useMemo(() =>
+    store.reduce((sum, m) => sum + getMonthTotal(m.savings || []), 0)
+  , [store]);
+
   // Current month data
   const currentMonthData = sortedMonths.find(m => m.month === currentMonth);
   const currentTotal = currentMonthData ? getMonthTotal(currentMonthData.entries) : 0;
@@ -153,18 +192,22 @@ const Expenses = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <div className="text-center">
                 <div className="text-xl font-bold text-amber-500 font-display">₹{currentTotal.toLocaleString()}</div>
-                <div className="text-[10px] text-muted-foreground mt-0.5">This Month</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">Spent This Month</div>
               </div>
               <div className="text-center">
-                <div className="text-xl font-bold text-foreground font-display">{currentMonthData?.entries.length || 0}</div>
-                <div className="text-[10px] text-muted-foreground mt-0.5">Items</div>
+                <div className="text-xl font-bold text-emerald-500 font-display">₹{currentSavingsTotal.toLocaleString()}</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">Saved This Month</div>
               </div>
               <div className="text-center">
                 <div className="text-xl font-bold text-primary font-display">₹{lifetimeStats.total.toLocaleString()}</div>
-                <div className="text-[10px] text-muted-foreground mt-0.5">All-Time</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">All-Time Spent</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xl font-bold text-emerald-500 font-display">₹{lifetimeSavingsTotal.toLocaleString()}</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">All-Time Saved</div>
               </div>
             </div>
 
@@ -181,6 +224,7 @@ const Expenses = () => {
         {sortedMonths.map(monthData => {
           const isExpanded = expandedMonth === monthData.month;
           const monthTotal = getMonthTotal(monthData.entries);
+          const monthSavings = getMonthTotal(monthData.savings || []);
           const isCurrent = monthData.month === currentMonth;
 
           return (
@@ -200,12 +244,12 @@ const Expenses = () => {
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-foreground font-display">{formatMonth(monthData.month)}</h3>
-                    <p className="text-[11px] text-muted-foreground">{monthData.entries.length} entries</p>
+                    <p className="text-[11px] text-muted-foreground">{monthData.entries.length} expenses • {(monthData.savings || []).length} savings</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-amber-500 font-display">₹{monthTotal.toLocaleString()}</span>
-                  {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+                <div className="flex flex-col items-end gap-0.5">
+                  <span className="text-sm font-bold text-amber-500 font-display">-₹{monthTotal.toLocaleString()}</span>
+                  {monthSavings > 0 && <span className="text-[11px] font-bold text-emerald-500 font-display">+₹{monthSavings.toLocaleString()}</span>}
                 </div>
               </button>
 
@@ -263,10 +307,74 @@ const Expenses = () => {
                   {/* Month Total */}
                   {monthData.entries.length > 0 && (
                     <div className="mt-3 pt-3 border-t border-white/10 flex justify-between">
-                      <span className="text-xs font-medium text-muted-foreground">Month Total</span>
-                      <span className="text-sm font-bold text-foreground font-display">₹{monthTotal.toLocaleString()}</span>
+                      <span className="text-xs font-medium text-muted-foreground">Expenses Total</span>
+                      <span className="text-sm font-bold text-amber-500 font-display">₹{monthTotal.toLocaleString()}</span>
                     </div>
                   )}
+
+                  {/* ═══ SAVINGS SECTION ═══ */}
+                  <div className="mt-4 pt-4 border-t border-white/10">
+                    <div className="flex items-center gap-2 mb-3">
+                      <PiggyBank className="w-4 h-4 text-emerald-500" />
+                      <span className="text-xs font-bold text-foreground font-display uppercase tracking-wide">Savings</span>
+                    </div>
+
+                    {/* Savings Entries */}
+                    {(monthData.savings || []).length > 0 && (
+                      <div className="space-y-2 mb-3">
+                        {(monthData.savings || []).map(entry => (
+                          <div key={entry.id} className="flex items-center justify-between py-2 px-3 bg-emerald-500/5 rounded-xl">
+                            <span className="text-sm text-foreground">{entry.key}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-bold text-emerald-500 font-display">₹{entry.amount.toLocaleString()}</span>
+                              <button
+                                onClick={() => removeSavings(monthData.month, entry.id)}
+                                className="w-6 h-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Add Savings Form */}
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Source"
+                        value={newSavingsKey}
+                        onChange={e => setNewSavingsKey(e.target.value)}
+                        className="flex-1 h-9 text-sm rounded-xl bg-muted/10 border-white/10"
+                        onKeyDown={e => e.key === 'Enter' && addSavings(monthData.month)}
+                      />
+                      <div className="relative w-28">
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">₹</span>
+                        <Input
+                          placeholder="Amount"
+                          type="number"
+                          value={newSavingsAmount}
+                          onChange={e => setNewSavingsAmount(e.target.value)}
+                          className="h-9 text-sm rounded-xl bg-muted/10 border-white/10 pl-6"
+                          onKeyDown={e => e.key === 'Enter' && addSavings(monthData.month)}
+                        />
+                      </div>
+                      <button
+                        onClick={() => addSavings(monthData.month)}
+                        className="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center active:scale-90 transition-transform shadow-lg shadow-emerald-500/20"
+                      >
+                        <Plus className="w-4 h-4 text-white" />
+                      </button>
+                    </div>
+
+                    {/* Savings Total */}
+                    {(monthData.savings || []).length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-white/10 flex justify-between">
+                        <span className="text-xs font-medium text-muted-foreground">Savings Total</span>
+                        <span className="text-sm font-bold text-emerald-500 font-display">₹{monthSavings.toLocaleString()}</span>
+                      </div>
+                    )}
+                  </div>
 
                   {/* Notes */}
                   <div className="mt-3 pt-3 border-t border-white/10">
